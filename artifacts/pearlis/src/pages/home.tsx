@@ -533,7 +533,7 @@ export default function Home() {
 
   const igEnabled = settings?.instagram?.enabled !== false;
   const igUsername = settings?.instagram?.username || "pearlisjewels";
-  const igPosts = settings?.instagram?.posts?.filter(Boolean) || [];
+  const igPosts = Array.isArray(settings?.instagram?.posts) ? (settings!.instagram as any).posts.filter(Boolean) : [];
   const DEFAULT_IG = [
     "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400&h=400",
     "https://images.unsplash.com/photo-1599643478524-fb66f70d00f7?auto=format&fit=crop&q=80&w=400&h=400",
@@ -902,7 +902,7 @@ export default function Home() {
       )}
 
       {/* ── 12. BLOG ── */}
-      {blogsData && blogsData.blogs.length > 0 && (
+      {blogsData?.blogs?.length > 0 && (
         <section className="py-16 md:py-24 bg-[#FAF8F3]">
           <div className="max-w-[1440px] mx-auto px-4 md:px-8">
             <motion.div {...fadeUp()} className="flex items-end justify-between mb-10 md:mb-14">
