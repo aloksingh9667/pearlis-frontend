@@ -699,7 +699,7 @@ export default function ProductPage() {
         </div>
 
         {/* ── Recently Viewed ── */}
-        {recentlyViewed.length > 0 && (
+        {Array.isArray(recentlyViewed) && recentlyViewed.length > 0 && (
           <div className="mt-20 sm:mt-28 pt-14 sm:pt-16 border-t border-[#0F0F0F]/6 min-w-0">
             <div className="mb-8 sm:mb-10">
               <p className="text-[#D4AF37] text-[9px] tracking-[0.35em] uppercase font-semibold mb-2">Your Journey</p>
