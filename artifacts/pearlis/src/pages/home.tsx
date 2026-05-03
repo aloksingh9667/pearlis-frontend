@@ -544,7 +544,7 @@ export default function Home() {
   ];
   const displayPosts = igPosts.length > 0 ? igPosts : DEFAULT_IG;
 
-  const settingsVideos = (settings?.videos || []).filter(v => v.url);
+  const settingsVideos = (Array.isArray(settings?.videos) ? settings!.videos : []).filter((v: any) => v.url);
 
 
   return (
@@ -602,7 +602,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
-              {arrivals.slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {(arrivals ?? []).slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
             <div className="mt-8 text-center md:hidden">
               <Link href="/shop">
@@ -665,7 +665,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
-              {trending.slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {(trending ?? []).slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </div>
         </section>
@@ -857,7 +857,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
-              {featured.slice(0, 8).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {(featured ?? []).slice(0, 8).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </div>
         </section>
@@ -915,7 +915,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              {blogsData.blogs.slice(0, 3).map((blog, i) => (
+              {(blogsData?.blogs ?? []).slice(0, 3).map((blog, i) => (
                 <motion.div key={blog.id} {...fadeUp(i * 0.1)} className="group">
                   <Link href={`/blog/${blog.id}`}>
                     <div className="aspect-[4/3] overflow-hidden bg-[#E8E2D9] mb-4">
