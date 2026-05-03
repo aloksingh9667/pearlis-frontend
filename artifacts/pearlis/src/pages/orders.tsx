@@ -81,7 +81,7 @@ export default function Orders() {
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
           </div>
-        ) : !data || data.orders.length === 0 ? (
+        ) : !data?.orders?.length ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="text-center py-20 bg-white border border-[#D4AF37]/15">
             <ShoppingBag className="w-12 h-12 text-[#D4AF37]/30 mx-auto mb-4" />
@@ -95,6 +95,7 @@ export default function Orders() {
         ) : (
           <div className="space-y-4">
             {data.orders.map((order, i) => {
+              const orderItems: any[] = Array.isArray(order.items) ? order.items : [];
               const totalINR = Math.round(order.total * INR_RATE);
               const subtotalINR = order.subtotal ? Math.round(order.subtotal * INR_RATE) : totalINR;
               return (
@@ -121,23 +122,23 @@ export default function Orders() {
                     {/* Item thumbnails */}
                     <div className="flex items-center gap-2 p-5 flex-1">
                       <div className="flex gap-2">
-                        {order.items.slice(0, 3).map((item: any, j: number) => (
+                        {orderItems.slice(0, 3).map((item: any, j: number) => (
                           <div key={j} className="w-14 h-[72px] bg-[#FAF8F3] overflow-hidden flex-shrink-0 border border-[#D4AF37]/10">
                             <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
                           </div>
                         ))}
-                        {order.items.length > 3 && (
+                        {orderItems.length > 3 && (
                           <div className="w-14 h-[72px] bg-[#FAF8F3] border border-[#D4AF37]/10 flex items-center justify-center text-[11px] text-[#0F0F0F]/40 font-medium flex-shrink-0">
-                            +{order.items.length - 3}
+                            +{orderItems.length - 3}
                           </div>
                         )}
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-[#0F0F0F] font-medium leading-snug line-clamp-1">
-                          {(order.items[0] as any)?.productName}
-                          {order.items.length > 1 && <span className="text-[#0F0F0F]/40 text-[11px]"> +{order.items.length - 1} more</span>}
+                          {orderItems[0]?.productName}
+                          {orderItems.length > 1 && <span className="text-[#0F0F0F]/40 text-[11px]"> +{orderItems.length - 1} more</span>}
                         </p>
-                        <p className="text-[11px] text-[#0F0F0F]/40 mt-1">{order.items.length} item{order.items.length > 1 ? "s" : ""}</p>
+                        <p className="text-[11px] text-[#0F0F0F]/40 mt-1">{orderItems.length} item{orderItems.length > 1 ? "s" : ""}</p>
                         <p className="text-base font-bold text-[#0F0F0F] mt-1.5">₹{totalINR.toLocaleString("en-IN")}</p>
                       </div>
                     </div>
