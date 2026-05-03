@@ -100,7 +100,7 @@ export default function Shop() {
                   category === "" ? "bg-[#0F0F0F] text-white" : "text-[#0F0F0F]/50 hover:text-[#0F0F0F] border border-[#0F0F0F]/15 hover:border-[#0F0F0F]/40"
                 }`}
               >All</button>
-              {categories?.categories?.map(c => (
+              {(Array.isArray(categories) ? categories : []).map(c => (
                 <button
                   key={c.id}
                   onClick={() => setCategory(c.name)}
