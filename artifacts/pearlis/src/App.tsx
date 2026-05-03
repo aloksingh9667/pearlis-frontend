@@ -28,6 +28,7 @@ import Gallery from "@/pages/gallery";
 import BlogList from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import Videos from "@/pages/videos";
+import SearchPage from "@/pages/search";
 import NotFound from "@/pages/not-found";
 
 // Admin Pages
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/blog" component={BlogList} />
       <Route path="/blog/:id" component={BlogPost} />
       <Route path="/videos" component={Videos} />
+      <Route path="/search" component={SearchPage} />
 
       {/* Admin Routes */}
       <Route path="/admin">{() => <AdminRoute component={AdminDashboard} />}</Route>
