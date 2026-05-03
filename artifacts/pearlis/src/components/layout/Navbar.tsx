@@ -325,7 +325,7 @@ export function Navbar() {
                 <input autoFocus type="text" placeholder="Search rings, necklaces, pendants..."
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === "Enter" && searchQuery.trim()) window.location.href = `/shop?q=${encodeURIComponent(searchQuery.trim())}`;
+                    if (e.key === "Enter" && searchQuery.trim()) window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
                     if (e.key === "Escape") setIsSearchOpen(false);
                   }}
                   className="flex-1 outline-none text-base text-[#0F0F0F] placeholder:text-[#0F0F0F]/35 bg-transparent" />
