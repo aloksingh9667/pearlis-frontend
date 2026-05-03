@@ -175,7 +175,7 @@ export default function BlogPost() {
             </Link>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6">
-              {(blog.tags || []).slice(0, 3).map(tag => (
+              {(Array.isArray(blog.tags) ? blog.tags : []).slice(0, 3).map(tag => (
                 <span key={tag} className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.28em] uppercase text-[#D4AF37] font-bold">
                   <Tag className="w-2.5 h-2.5" /> {tag}
                 </span>
@@ -221,11 +221,11 @@ export default function BlogPost() {
       </div>
 
       {/* Tags */}
-      {(blog.tags || []).length > 0 && (
+      {(Array.isArray(blog.tags) ? blog.tags : []).length > 0 && (
         <div className="bg-white border-t border-[#D4AF37]/10">
           <div className="max-w-3xl mx-auto px-6 py-8 flex flex-wrap items-center gap-3">
             <span className="text-[9px] tracking-[0.3em] uppercase text-[#0F0F0F]/35 font-semibold mr-2">Tags</span>
-            {(blog.tags || []).map(tag => (
+            {(Array.isArray(blog.tags) ? blog.tags : []).map(tag => (
               <span key={tag}
                 className="text-[9.5px] tracking-[0.18em] uppercase px-3 py-1.5 border border-[#D4AF37]/25 text-[#0F0F0F]/55 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors cursor-default">
                 {tag}
@@ -257,7 +257,7 @@ export default function BlogPost() {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     </div>
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {(post.tags || []).slice(0, 1).map(tag => (
+                      {(Array.isArray(post.tags) ? post.tags : []).slice(0, 1).map(tag => (
                         <span key={tag} className="text-[8.5px] tracking-[0.2em] uppercase text-[#D4AF37] font-semibold">{tag}</span>
                       ))}
                       <span className="text-[8.5px] tracking-[0.2em] uppercase text-[#0F0F0F]/30">
