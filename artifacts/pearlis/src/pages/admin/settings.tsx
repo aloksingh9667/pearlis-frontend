@@ -304,7 +304,7 @@ export default function AdminSettings() {
                           )}
                           <button
                             onClick={() => {
-                              const posts = (draft.instagram?.posts || []).filter((_, j) => j !== i);
+                              const posts = (Array.isArray(draft.instagram?.posts) ? draft.instagram!.posts : []).filter((_, j) => j !== i);
                               updateNested("instagram", "posts", posts);
                             }}
                             className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full text-xs items-center justify-center hidden group-hover:flex"
@@ -402,7 +402,7 @@ export default function AdminSettings() {
                       <div className="flex justify-between items-center">
                         <p className="text-sm font-medium">Video {i + 1}</p>
                         <Button variant="ghost" size="sm" className="rounded-none h-8 text-destructive hover:bg-destructive/10 gap-1"
-                          onClick={() => update("videos", (draft.videos || []).filter((_, j) => j !== i))}>
+                          onClick={() => update("videos", (Array.isArray(draft.videos) ? draft.videos : []).filter((_, j) => j !== i))}>
                           <Trash2 className="w-3.5 h-3.5" /> Remove
                         </Button>
                       </div>
@@ -911,7 +911,7 @@ function NavbarCategoriesTab({
   saving: boolean;
 }) {
   const { data: categoriesData } = useListCategories();
-  const categories = (categoriesData as any[] | undefined) ?? [];
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
   const excluded: string[] = (draft as any).navbarCategories?.excludedSlugs ?? [];
 
   function toggle(slug: string) {
