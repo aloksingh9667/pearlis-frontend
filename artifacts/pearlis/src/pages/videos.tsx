@@ -245,7 +245,7 @@ export default function VideosPage() {
       fetch("/api/settings").then(r => r.json()).catch(() => ({})),
     ]).then(([tableVideos, settings]) => {
       const dbVideos: Video[] = Array.isArray(tableVideos) ? tableVideos : [];
-      const settingsVideos: Video[] = ((settings?.videos as any[]) || [])
+      const settingsVideos: Video[] = (Array.isArray(settings?.videos) ? (settings.videos as any[]) : [])
         .filter((v: any) => v.url)
         .map((v: any, i: number) => {
           const ytId = getYouTubeId(v.url);
