@@ -54,7 +54,7 @@ export default defineConfig({
     fs: { strict: true },
     proxy: {
       "/api": {
-        target: process.env.RENDER_API_URL ?? "http://localhost:8080",
+        target: process.env.RENDER_API_URL ?? "https://pearlis-api.onrender.com",
         changeOrigin: true,
         secure: false,
       },

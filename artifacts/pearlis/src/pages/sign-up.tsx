@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Eye, EyeOff, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail, ArrowLeft, CheckCircle2, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const RESEND_COOLDOWN = 60;
 
 type Step = "form" | "otp" | "done";
 
@@ -20,9 +22,32 @@ export default function SignUpPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const startCooldown = () => {
+    setCooldown(RESEND_COOLDOWN);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +76,7 @@ export default function SignUpPage() {
         return;
       }
       setStep("otp");
+      startCooldown();
       toast({ title: "Code sent", description: `A 6-digit code has been sent to ${email}` });
     } catch {
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
@@ -88,13 +114,21 @@ export default function SignUpPage() {
   };
 
   const handleResend = async () => {
+    if (cooldown > 0 || loading) return;
     setLoading(true);
     try {
-      await fetch("/api/auth/send-otp", {
+      const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), name: name.trim() }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Error", description: data.error || "Could not resend code.", variant: "destructive" });
+        return;
+      }
+      startCooldown();
+      setOtp("");
       toast({ title: "Code resent", description: `A new code has been sent to ${email}` });
     } catch {
       toast({ title: "Error", description: "Could not resend code.", variant: "destructive" });
@@ -207,7 +241,7 @@ export default function SignUpPage() {
 
             {step === "otp" && (
               <motion.div key="otp" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-                <button onClick={() => setStep("form")} className="flex items-center gap-1.5 text-xs text-[#6B6B6B] hover:text-[#0F0F0F] mb-8 uppercase tracking-widest transition-colors">
+                <button onClick={() => { setStep("form"); setCooldown(0); if (intervalRef.current) clearInterval(intervalRef.current); }} className="flex items-center gap-1.5 text-xs text-[#6B6B6B] hover:text-[#0F0F0F] mb-8 uppercase tracking-widest transition-colors">
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
                 <div className="text-center mb-8">
@@ -240,12 +274,23 @@ export default function SignUpPage() {
                   </Button>
                 </form>
 
-                <p className="text-center text-xs text-[#6B6B6B] mt-5">
-                  Didn't receive the code?{" "}
-                  <button onClick={handleResend} disabled={loading} className="text-[#D4AF37] hover:text-[#c7a436] font-semibold hover:underline underline-offset-4 transition-colors">
-                    Resend
-                  </button>
-                </p>
+                <div className="text-center mt-5">
+                  <p className="text-xs text-[#6B6B6B] mb-2">Didn't receive the code?</p>
+                  {cooldown > 0 ? (
+                    <div className="inline-flex items-center gap-1.5 text-xs text-[#6B6B6B]">
+                      <Timer className="w-3 h-3" />
+                      <span>Resend in <span className="font-semibold tabular-nums text-[#0F0F0F]">{cooldown}s</span></span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleResend}
+                      disabled={loading}
+                      className="text-xs text-[#D4AF37] hover:text-[#c7a436] font-semibold hover:underline underline-offset-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? "Sending…" : "Resend Code"}
+                    </button>
+                  )}
+                </div>
               </motion.div>
             )}
 
