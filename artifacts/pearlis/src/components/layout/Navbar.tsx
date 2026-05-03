@@ -121,7 +121,7 @@ export function Navbar() {
   const excludedSlugs: string[] = siteSettings?.navbarCategories?.excludedSlugs ?? [];
   const jewelleryItems = [
     { label: "All Jewellery", href: "/shop" },
-    ...((categoriesData as any[] | undefined) ?? [])
+    ...(Array.isArray(categoriesData) ? categoriesData : [])
       .filter((c: any) => !excludedSlugs.includes(c.slug))
       .map((c: any) => ({
         label: c.name,
