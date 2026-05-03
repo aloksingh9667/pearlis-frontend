@@ -236,11 +236,16 @@ export default function SignUpPage() {
                   <p className="text-[#6B6B6B] text-sm">We'll verify your email with a one-time code.</p>
                 </div>
 
-                {GOOGLE_ENABLED && (
-                  <>
+                <>
                     <button
                       type="button"
-                      onClick={() => googleLogin()}
+                      onClick={() => {
+                        if (!GOOGLE_ENABLED) {
+                          toast({ title: "Google Login Not Configured", description: "Set VITE_GOOGLE_CLIENT_ID in your Cloudflare Pages environment variables to enable Google login.", variant: "destructive" });
+                          return;
+                        }
+                        googleLogin();
+                      }}
                       disabled={googleLoading || loading}
                       className="w-full h-12 rounded-xl border border-[#E8DDC0] bg-white hover:bg-[#FAF8F3] flex items-center justify-center gap-3 text-[#0F0F0F] text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mb-5"
                     >
@@ -257,7 +262,6 @@ export default function SignUpPage() {
                       </div>
                     </div>
                   </>
-                )}
 
                 <form onSubmit={handleSendOtp} className="space-y-4">
                   <div className="space-y-2">
