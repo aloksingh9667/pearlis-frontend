@@ -105,7 +105,7 @@ export default function AdminPageContent() {
   const { toast } = useToast();
 
   /* Build dynamic PAGES list */
-  const catPages = (categoriesData?.categories ?? []).map((c: { slug: string; name: string }) => ({
+  const catPages = (Array.isArray(categoriesData) ? categoriesData : []).map((c: { slug: string; name: string }) => ({
     id: c.slug,
     label: `${CAT_EMOJIS[c.slug] ?? "🏷️"} ${c.name}`,
   }));
