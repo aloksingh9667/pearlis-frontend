@@ -1,0 +1,4 @@
+# Cloudflare Pages — SPA fallback
+# All non-file routes serve index.html so React Router handles them client-side.
+# /api/* is handled by the Pages Function (functions/api/[[path]].js), not this file.
+/*    /index.html   200
