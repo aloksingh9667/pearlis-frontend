@@ -1,18 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Mail, CheckCircle2, AlertCircle, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const RESEND_COOLDOWN = 60;
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [emailExists, setEmailExists] = useState<boolean | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
+
+  const startCooldown = () => {
+    setCooldown(RESEND_COOLDOWN);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const checkEmail = async (value: string) => {
     setEmail(value);
@@ -35,7 +60,7 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || cooldown > 0) return;
     setLoading(true);
     try {
       const res = await fetch("/api/auth/forgot-password", {
@@ -48,6 +73,7 @@ export default function ForgotPassword() {
         toast({ title: "Error", description: data.error || "Something went wrong.", variant: "destructive" });
         return;
       }
+      startCooldown();
       setSent(true);
     } catch {
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
@@ -121,10 +147,19 @@ export default function ForgotPassword() {
 
                 <Button
                   type="submit"
-                  disabled={loading || emailExists === false}
+                  disabled={loading || emailExists === false || cooldown > 0}
                   className="w-full rounded-none h-12 uppercase tracking-widest"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Reset Link"}
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : cooldown > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <Timer className="w-4 h-4" />
+                      Resend in {cooldown}s
+                    </span>
+                  ) : (
+                    "Send Reset Link"
+                  )}
                 </Button>
               </form>
             </motion.div>
@@ -141,13 +176,22 @@ export default function ForgotPassword() {
               <p className="text-xs text-muted-foreground mb-8">
                 The link expires in 1 hour. If you don't see it, check your spam folder.
               </p>
-              <Button
-                variant="outline"
-                onClick={() => { setSent(false); setEmailExists(null); }}
-                className="rounded-none uppercase tracking-widest text-xs"
-              >
-                Try a different email
-              </Button>
+              {cooldown > 0 ? (
+                <div className="inline-flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                  <Timer className="w-3.5 h-3.5" />
+                  <span>Can resend in <span className="font-semibold tabular-nums text-foreground">{cooldown}s</span></span>
+                </div>
+              ) : null}
+              <div className="flex flex-col gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => { setSent(false); setEmailExists(null); }}
+                  className="rounded-none uppercase tracking-widest text-xs"
+                  disabled={cooldown > 0}
+                >
+                  {cooldown > 0 ? `Try again in ${cooldown}s` : "Try a different email"}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

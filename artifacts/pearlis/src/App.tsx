@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { BrandingApplicator } from "@/components/layout/BrandingApplicator";
 import { Loader2 } from "lucide-react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Pages
 import Home from "@/pages/home";
@@ -46,6 +47,7 @@ import AdminStockAlerts from "@/pages/admin/stock-alerts";
 import AdminLoginPage from "@/pages/admin-login";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 // Admin guard
 function AdminRoute({ component: Component }: { component: any }) {
@@ -134,9 +136,11 @@ function AppWithProviders() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <AppWithProviders />
-    </WouterRouter>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || "google-oauth-not-configured"}>
+      <WouterRouter base={basePath}>
+        <AppWithProviders />
+      </WouterRouter>
+    </GoogleOAuthProvider>
   );
 }
 
