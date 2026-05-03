@@ -602,7 +602,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
-              {(arrivals ?? []).slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {(Array.isArray(arrivals) ? arrivals : []).slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
             <div className="mt-8 text-center md:hidden">
               <Link href="/shop">
@@ -665,7 +665,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
-              {(trending ?? []).slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {(Array.isArray(trending) ? trending : []).slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </div>
         </section>
@@ -857,7 +857,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
-              {(featured ?? []).slice(0, 8).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {(Array.isArray(featured) ? featured : []).slice(0, 8).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </div>
         </section>
@@ -923,7 +923,7 @@ export default function Home() {
                         className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-105" />
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {(blog.tags || []).slice(0, 2).map(tag => (
+                      {(Array.isArray(blog.tags) ? blog.tags : []).slice(0, 2).map(tag => (
                         <span key={tag} className="text-[8.5px] tracking-[0.2em] uppercase text-[#D4AF37] font-semibold">{tag}</span>
                       ))}
                     </div>
