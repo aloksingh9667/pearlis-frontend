@@ -77,7 +77,7 @@ export default function AdminMessages() {
       { ids: Array.from(selectedIds), replyText: bulkReplyText },
       {
         onSuccess: (data: any) => {
-          const sent = data.results.filter((r: any) => r.emailSent).length;
+          const sent = (Array.isArray(data?.results) ? data.results : []).filter((r: any) => r.emailSent).length;
           toast({ title: "Bulk Reply Sent", description: `${sent}/${selectedIds.size} emails sent.` });
           setSelectedIds(new Set());
           setBulkReplyText("");
