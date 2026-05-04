@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Loader2, Bell, Search, CheckCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Bell, Search, CheckCircle, Clock, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-
+import { format } from "date-fns";
 import { apiUrl } from "@/lib/apiUrl";
 
 function adminFetch(url: string) {
@@ -78,6 +79,51 @@ export default function AdminStockAlerts() {
   const totalPending = grouped.reduce((s, g) => s + g.pending, 0);
   const totalNotified = grouped.reduce((s, g) => s + g.notified, 0);
 
+  function exportAllCSV() {
+    if (!data || data.length === 0) return;
+    const rows = [
+      "Email,Product,Product ID,Status,Subscribed At,Notified At",
+      ...data.map((a) =>
+        [
+          a.email,
+          `"${(a.productName ?? `Product #${a.productId}`).replace(/"/g, '""')}"`,
+          a.productId,
+          a.notifiedAt ? "Notified" : "Waiting",
+          format(new Date(a.createdAt), "yyyy-MM-dd HH:mm"),
+          a.notifiedAt ? format(new Date(a.notifiedAt), "yyyy-MM-dd HH:mm") : "",
+        ].join(",")
+      ),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock-alerts-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportProductCSV(g: GroupedProduct) {
+    const rows = [
+      "Email,Status,Subscribed At,Notified At",
+      ...g.subscribers.map((s) =>
+        [
+          s.email,
+          s.notifiedAt ? "Notified" : "Waiting",
+          format(new Date(s.createdAt), "yyyy-MM-dd HH:mm"),
+          s.notifiedAt ? format(new Date(s.notifiedAt), "yyyy-MM-dd HH:mm") : "",
+        ].join(",")
+      ),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock-alerts-${g.productName.toLowerCase().replace(/\s+/g, "-")}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <AdminLayout>
       <div className="max-w-5xl">
@@ -88,6 +134,16 @@ export default function AdminStockAlerts() {
               Customers waiting for out-of-stock products
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportAllCSV}
+            disabled={!data || data.length === 0}
+            className="gap-2 text-xs tracking-widest uppercase"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export All CSV
+          </Button>
         </div>
 
         {/* Summary cards */}
@@ -134,14 +190,14 @@ export default function AdminStockAlerts() {
             {filtered.map((g) => (
               <div key={g.productId} className="bg-card border border-border rounded-sm overflow-hidden">
                 {/* Row */}
-                <button
-                  onClick={() => setExpanded(expanded === g.productId ? null : g.productId)}
-                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
+                  <button
+                    onClick={() => setExpanded(expanded === g.productId ? null : g.productId)}
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                  >
                     <Bell className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <span className="font-medium truncate">{g.productName}</span>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-4 flex-shrink-0 ml-4">
                     <span className="flex items-center gap-1.5 text-sm text-amber-600">
                       <Clock className="w-3.5 h-3.5" />
@@ -151,14 +207,29 @@ export default function AdminStockAlerts() {
                       <CheckCircle className="w-3.5 h-3.5" />
                       {g.notified} notified
                     </span>
-                    <svg
-                      className={`w-4 h-4 text-muted-foreground transition-transform ${expanded === g.productId ? "rotate-180" : ""}`}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); exportProductCSV(g); }}
+                      className="gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 h-7"
+                      title={`Export ${g.productName} subscribers`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
-                    </svg>
+                      <Download className="w-3.5 h-3.5" />
+                      CSV
+                    </Button>
+                    <button
+                      onClick={() => setExpanded(expanded === g.productId ? null : g.productId)}
+                      className="p-1"
+                    >
+                      <svg
+                        className={`w-4 h-4 text-muted-foreground transition-transform ${expanded === g.productId ? "rotate-180" : ""}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+                      </svg>
+                    </button>
                   </div>
-                </button>
+                </div>
 
                 {/* Expanded subscriber list */}
                 {expanded === g.productId && (
