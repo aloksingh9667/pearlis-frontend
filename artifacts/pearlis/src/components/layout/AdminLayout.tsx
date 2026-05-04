@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   LayoutDashboard, ShoppingBag, Package, Users, FileText, Tag, LogOut,
-  Settings, FileEdit, MessageSquare, Menu, X, ChevronDown, Video, Layers, Star, Bell
+  Settings, FileEdit, MessageSquare, Menu, X, ChevronDown, Video, Layers, Star, Bell, Mail
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -32,6 +32,7 @@ const NAV_GROUPS = [
     label: "People",
     items: [
       { name: "Users", href: "/admin/users", icon: Users },
+      { name: "Newsletter", href: "/admin/newsletter", icon: Mail },
     ],
   },
   {
