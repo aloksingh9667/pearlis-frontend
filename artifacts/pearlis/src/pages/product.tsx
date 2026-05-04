@@ -15,8 +15,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/ui/ProductCard";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { apiUrl } from "@/lib/apiUrl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Heart, Share2, ShieldCheck, Truck, RefreshCcw,
@@ -45,6 +46,78 @@ function parseVariants(input: unknown): Variant[] {
     }
   }
   return [];
+}
+
+function NotifyMe({ productId }: { productId: number }) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(apiUrl("/api/stock-alerts"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Could not subscribe", description: data.error || "Please try again.", variant: "destructive" });
+        return;
+      }
+      setDone(true);
+    } catch {
+      toast({ title: "Network error", description: "Please check your connection and try again.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [email, productId, toast]);
+
+  if (done) {
+    return (
+      <div className="mb-6 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-full text-[11px] tracking-wide font-semibold">
+        <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+        We'll email you when this item is back in stock.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6">
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full h-13 rounded-full bg-[#D4AF37] text-white uppercase tracking-[0.2em] text-[10px] font-bold hover:bg-[#c4a030] transition-colors py-3"
+        >
+          Notify Me When Available
+        </button>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            type="email"
+            required
+            autoFocus
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            className="flex-1 rounded-full border border-[#D4AF37]/30 focus:border-[#D4AF37] focus:outline-none px-4 py-2.5 text-sm text-[#0F0F0F] placeholder:text-[#0F0F0F]/30 bg-white"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-full bg-[#D4AF37] hover:bg-[#c4a030] text-white text-[10px] tracking-[0.18em] uppercase font-bold px-5 py-2.5 transition-colors disabled:opacity-60 flex items-center gap-1.5 whitespace-nowrap"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Notify Me"}
+          </button>
+        </form>
+      )}
+    </div>
+  );
 }
 
 export default function ProductPage() {
@@ -372,11 +445,7 @@ export default function ProductPage() {
 
             {/* Out of stock notify */}
             {product.stock === 0 && (
-              <div className="mb-6">
-                <button className="w-full h-13 rounded-full bg-[#D4AF37] text-white uppercase tracking-[0.2em] text-[10px] font-bold hover:bg-[#c4a030] transition-colors">
-                  Notify Me When Available
-                </button>
-              </div>
+              <NotifyMe productId={product.id} />
             )}
 
             {/* CTA buttons */}
