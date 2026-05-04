@@ -74,7 +74,7 @@ export function Footer() {
               {[
                 { label: "Contact Us", href: "/contact" },
                 { label: "Our Story", href: "/about" },
-                { label: "Order Status", href: "/orders" },
+                { label: "Track Order", href: "/track-order" },
                 { label: "Blog & Guides", href: "/blog" },
                 { label: "Care Instructions", href: "#" },
                 { label: "Returns & Exchanges", href: "#" },
