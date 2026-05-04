@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import {
   Loader2, CheckCircle2, Package, Truck, Star,
   Search, ArrowRight, MapPin, CreditCard, Phone,
-  RotateCcw, ExternalLink,
+  RotateCcw, ExternalLink, Share2, Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -88,6 +88,40 @@ function OrderResult({ orderId, onReset }: { orderId: number; onReset: () => voi
   const { data: order, isLoading, isError, dataUpdatedAt } = useGetOrder(orderId, {
     query: { enabled: orderId > 0, refetchInterval: 30_000, retry: 1 },
   });
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/track-order?order=${orderId}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Track Pearlis Order #${orderId.toString().padStart(6, "0")}`,
+          text: "Track my Pearlis jewellery order in real-time:",
+          url,
+        });
+        return;
+      } catch {
+        // user cancelled share — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // final fallback: select a temp textarea
+      const el = document.createElement("textarea");
+      el.value = url;
+      el.style.position = "fixed";
+      el.style.opacity = "0";
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
 
   const badge  = order ? (STATUS_BADGE[order.status] ?? { label: order.status, cls: "bg-gray-50 text-gray-600 border-gray-200" }) : null;
   const addr   = order ? (order.shippingAddress as any) : null;
@@ -262,10 +296,26 @@ function OrderResult({ orderId, onReset }: { orderId: number; onReset: () => voi
           className="inline-flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase font-bold text-[#0F0F0F]/40 hover:text-[#D4AF37] transition-colors">
           <RotateCcw className="w-3.5 h-3.5" /> Track another order
         </button>
-        <Link href="/shop"
-          className="inline-flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase font-bold text-white bg-[#0F0F0F] hover:bg-[#D4AF37] px-8 py-3 transition-colors">
-          Continue Shopping <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleShare}
+            className={`inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase font-bold border px-5 py-3 transition-all duration-300 ${
+              copied
+                ? "text-green-700 border-green-400 bg-green-50"
+                : "text-[#D4AF37] border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5"
+            }`}
+          >
+            {copied ? (
+              <><Check className="w-3.5 h-3.5" /> Link Copied</>
+            ) : (
+              <><Share2 className="w-3.5 h-3.5" /> Share Order</>
+            )}
+          </button>
+          <Link href="/shop"
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase font-bold text-white bg-[#0F0F0F] hover:bg-[#D4AF37] px-8 py-3 transition-colors">
+            Continue Shopping <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
     </motion.div>
   );
