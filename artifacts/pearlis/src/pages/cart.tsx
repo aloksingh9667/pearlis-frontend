@@ -152,12 +152,6 @@ export default function Cart() {
                 })}
               </AnimatePresence>
 
-              {/* Continue shopping */}
-              <div className="pt-6">
-                <Link href="/shop" className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-[#0F0F0F]/45 hover:text-[#D4AF37] font-semibold transition-colors">
-                  ← Continue Shopping
-                </Link>
-              </div>
             </div>
 
             {/* Order summary */}
