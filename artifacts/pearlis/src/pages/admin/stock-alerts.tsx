@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Loader2, Bell, Search, CheckCircle, Clock, Download } from "lucide-react";
+import { Loader2, Bell, Search, CheckCircle, Clock, Download, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { apiUrl } from "@/lib/apiUrl";
+import { useToast } from "@/hooks/use-toast";
+import { apiUrl, adminHeaders } from "@/lib/apiUrl";
 
 function adminFetch(url: string) {
   const token = localStorage.getItem("token");
@@ -38,6 +39,9 @@ type GroupedProduct = {
 export default function AdminStockAlerts() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [notifying, setNotifying] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data, isLoading, error } = useQuery<Alert[]>({
     queryKey: ["admin-stock-alerts"],
@@ -78,6 +82,30 @@ export default function AdminStockAlerts() {
 
   const totalPending = grouped.reduce((s, g) => s + g.pending, 0);
   const totalNotified = grouped.reduce((s, g) => s + g.notified, 0);
+
+  async function handleNotify(g: GroupedProduct) {
+    if (g.pending === 0) return;
+    if (!confirm(`Send back-in-stock emails to ${g.pending} customer${g.pending !== 1 ? "s" : ""} waiting for "${g.productName}"?`)) return;
+
+    setNotifying(g.productId);
+    try {
+      const res = await fetch(apiUrl(`/api/admin/stock-alerts/${g.productId}/notify`), {
+        method: "POST",
+        headers: adminHeaders(),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to send notifications");
+      toast({
+        title: "Notifications Sent",
+        description: result.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-stock-alerts"] });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setNotifying(null);
+    }
+  }
 
   function exportAllCSV() {
     if (!data || data.length === 0) return;
@@ -189,8 +217,9 @@ export default function AdminStockAlerts() {
           <div className="space-y-2">
             {filtered.map((g) => (
               <div key={g.productId} className="bg-card border border-border rounded-sm overflow-hidden">
-                {/* Row */}
-                <div className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
+                {/* Row header */}
+                <div className="flex items-center justify-between px-5 py-4 hover:bg-muted/20 transition-colors">
+                  {/* Left: expand toggle + name */}
                   <button
                     onClick={() => setExpanded(expanded === g.productId ? null : g.productId)}
                     className="flex items-center gap-3 min-w-0 flex-1 text-left"
@@ -198,31 +227,56 @@ export default function AdminStockAlerts() {
                     <Bell className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <span className="font-medium truncate">{g.productName}</span>
                   </button>
-                  <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-                    <span className="flex items-center gap-1.5 text-sm text-amber-600">
+
+                  {/* Right: counts + actions */}
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                    <span className="hidden sm:flex items-center gap-1.5 text-sm text-amber-600">
                       <Clock className="w-3.5 h-3.5" />
                       {g.pending} pending
                     </span>
-                    <span className="flex items-center gap-1.5 text-sm text-green-600">
+                    <span className="hidden sm:flex items-center gap-1.5 text-sm text-green-600">
                       <CheckCircle className="w-3.5 h-3.5" />
                       {g.notified} notified
                     </span>
+
+                    {/* Notify button — only shown when pending > 0 */}
+                    {g.pending > 0 && (
+                      <Button
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleNotify(g); }}
+                        disabled={notifying === g.productId}
+                        className="gap-1.5 text-xs h-8 bg-accent hover:bg-accent/90 text-accent-foreground"
+                      >
+                        {notifying === g.productId ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" />Sending…</>
+                        ) : (
+                          <><Send className="w-3.5 h-3.5" />Notify {g.pending}</>
+                        )}
+                      </Button>
+                    )}
+
+                    {g.pending === 0 && (
+                      <span className="text-xs text-muted-foreground/50 px-2">All notified</span>
+                    )}
+
+                    {/* CSV export for this product */}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={(e) => { e.stopPropagation(); exportProductCSV(g); }}
                       className="gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 h-7"
-                      title={`Export ${g.productName} subscribers`}
+                      title="Export CSV"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      CSV
                     </Button>
+
+                    {/* Expand chevron */}
                     <button
                       onClick={() => setExpanded(expanded === g.productId ? null : g.productId)}
-                      className="p-1"
+                      className="p-1 text-muted-foreground"
                     >
                       <svg
-                        className={`w-4 h-4 text-muted-foreground transition-transform ${expanded === g.productId ? "rotate-180" : ""}`}
+                        className={`w-4 h-4 transition-transform ${expanded === g.productId ? "rotate-180" : ""}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
@@ -254,7 +308,8 @@ export default function AdminStockAlerts() {
                             <td className="px-5 py-3">
                               {s.notifiedAt ? (
                                 <span className="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
-                                  <CheckCircle className="w-3 h-3" /> Notified
+                                  <CheckCircle className="w-3 h-3" />
+                                  Notified {format(new Date(s.notifiedAt), "MMM d")}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-amber-600 text-xs font-medium">
