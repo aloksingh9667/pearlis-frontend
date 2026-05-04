@@ -32,9 +32,20 @@ const replitPlugins =
       ]
     : [];
 
+// Expose RENDER_API_URL (Cloudflare Pages secret) to client bundle as VITE_API_URL.
+// In development, fall back to VITE_API_URL if set directly.
+const clientApiUrl =
+  process.env.RENDER_API_URL ??
+  process.env.VITE_API_URL ??
+  "";
+
 export default defineConfig({
   base: basePath,
   plugins: [react(), tailwindcss({ optimize: false }), ...replitPlugins],
+  define: {
+    // Make the value available inside the bundle as import.meta.env.VITE_API_URL
+    "import.meta.env.VITE_API_URL": JSON.stringify(clientApiUrl),
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
