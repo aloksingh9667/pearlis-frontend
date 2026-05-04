@@ -12,6 +12,7 @@ import { Loader2, Plus, Edit, Trash2, X, ImagePlus, Upload, Video, PlusCircle, M
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl } from "@/lib/apiUrl";
 
 const toINR = (usd: number) => Math.round(usd * 83);
 const fmt = (inr: number) => `₹${inr.toLocaleString("en-IN")}`;
@@ -158,7 +159,7 @@ export default function AdminProducts() {
     setter(true);
     try {
       const fd = new FormData(); fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${adminToken()}` }, body: fd });
+      const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${adminToken()}` }, body: fd });
       if (!res.ok) throw new Error();
       const { url } = await res.json();
       if (kind === "video") { set("videoUrl", url); toast({ title: "Video uploaded!" }); }

@@ -10,6 +10,7 @@ import { Loader2, Plus, Trash2, X, Tag, ToggleLeft, ToggleRight, Info } from "lu
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl } from "@/lib/apiUrl";
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 const fmtINR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -28,7 +29,7 @@ const emptyForm: CouponForm = {
 };
 
 async function toggleCoupon(id: number, isActive: boolean, token: string | null) {
-  const res = await fetch(`/api/coupons/${id}`, {
+  const res = await fetch(apiUrl(`/api/coupons/${id}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ isActive }),

@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 
+import { apiUrl } from "@/lib/apiUrl";
+
 function adminFetch(url: string, opts: RequestInit = {}) {
   const token = localStorage.getItem("token");
-  return fetch(url, {
+  return fetch(apiUrl(url), {
     ...opts,
     headers: {
       "Content-Type": "application/json",

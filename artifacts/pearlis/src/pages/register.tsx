@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, CheckCircle2, Mail, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl } from "@/lib/apiUrl";
 
 type Step = "form" | "otp" | "done";
 
@@ -38,7 +39,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await fetch(apiUrl("/api/auth/send-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name }),
@@ -65,7 +66,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await fetch(apiUrl("/api/auth/verify-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp, name, password }),
@@ -88,7 +89,7 @@ export default function Register() {
   const handleResendOtp = async () => {
     setLoading(true);
     try {
-      await fetch("/api/auth/send-otp", {
+      await fetch(apiUrl("/api/auth/send-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name }),

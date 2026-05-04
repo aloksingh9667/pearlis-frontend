@@ -4,8 +4,7 @@
  * generated OpenAPI client.
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-const BASE = "/api";
+import { apiUrl } from "./apiUrl";
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("token");
@@ -15,7 +14,7 @@ function getAuthHeaders(): HeadersInit {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(apiUrl(`/api${path}`), {
     ...options,
     headers: { ...getAuthHeaders(), ...(options?.headers || {}) },
   });

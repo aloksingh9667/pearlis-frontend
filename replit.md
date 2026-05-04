@@ -21,7 +21,10 @@ A React + Vite SPA for a luxury jewelry e-commerce platform called "Pearlis". It
 ### Key Configuration
 - Frontend runs on port 5000 (`PORT=5000` env var required by `vite.config.ts`)
 - Vite config has `allowedHosts: true` and `host: '0.0.0.0'` for Replit proxy compatibility
-- API requests to `/api/*` are proxied to the backend (configurable via `RENDER_API_URL` env var)
+- API requests to `/api/*` are proxied to the backend via Vite dev proxy in development
+- In **production** (Cloudflare Pages), the `VITE_API_URL` env var must be set to `https://pearlis-api.onrender.com` — all API calls route through `src/lib/apiUrl.ts` helper
+- The generated API client (`@workspace/api-client-react`) uses `setBaseUrl()` called in `main.tsx` with `VITE_API_URL`
+- All raw `fetch()` calls throughout pages use `apiUrl()` from `src/lib/apiUrl.ts` to prepend the correct origin
 - Google OAuth configurable via `VITE_GOOGLE_CLIENT_ID` env var
 
 ## Development

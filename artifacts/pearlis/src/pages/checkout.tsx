@@ -12,6 +12,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetSettings } from "@/lib/adminApi";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiUrl } from "@/lib/apiUrl";
 
 declare global {
   interface Window {
@@ -34,7 +35,7 @@ const INR = (usd: number) => Math.round(usd * 83);
 const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 async function validateCoupon(code: string, subtotalINR: number) {
-  const res = await fetch(`/api/coupons/validate`, {
+  const res = await fetch(apiUrl(`/api/coupons/validate`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code, subtotal: subtotalINR / 83 }),
@@ -71,7 +72,7 @@ export default function Checkout() {
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem("token");
-    fetch("/api/users/addresses", { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl("/api/users/addresses"), { headers: { Authorization: `Bearer ${token}` } })
       .then(r => { if (!r.ok) throw new Error("unauth"); return r.json(); })
       .then((data: SavedAddress[]) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -171,7 +172,7 @@ export default function Checkout() {
         }
 
         // Get Razorpay config (key ID)
-        const cfgRes = await fetch("/api/razorpay/config");
+        const cfgRes = await fetch(apiUrl("/api/razorpay/config"));
         const cfg = await cfgRes.json();
         if (!cfg.enabled) {
           toast({ title: "Razorpay not configured", description: "Please contact support.", variant: "destructive" });
@@ -180,7 +181,7 @@ export default function Checkout() {
         }
 
         // Create Razorpay order on backend
-        const orderRes = await fetch("/api/razorpay/create-order", {
+        const orderRes = await fetch(apiUrl("/api/razorpay/create-order"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ amountINR: totalINR, receipt: `cart_${Date.now()}` }),
@@ -207,7 +208,7 @@ export default function Checkout() {
           theme: { color: "#D4AF37" },
           handler: async (response: any) => {
             // Verify payment
-            const verRes = await fetch("/api/razorpay/verify", {
+            const verRes = await fetch(apiUrl("/api/razorpay/verify"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

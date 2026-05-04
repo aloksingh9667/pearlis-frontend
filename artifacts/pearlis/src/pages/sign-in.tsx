@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
+import { apiUrl } from "@/lib/apiUrl";
 
 const GOOGLE_ENABLED = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -36,7 +37,7 @@ export default function SignInPage() {
     if (!email.trim() || !password) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -60,7 +61,7 @@ export default function SignInPage() {
     onSuccess: async (tokenResponse) => {
       setGoogleLoading(true);
       try {
-        const res = await fetch("/api/auth/google", {
+        const res = await fetch(apiUrl("/api/auth/google"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: tokenResponse.access_token }),

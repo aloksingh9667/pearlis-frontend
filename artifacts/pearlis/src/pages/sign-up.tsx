@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Eye, EyeOff, Mail, ArrowLeft, CheckCircle2, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGoogleLogin } from "@react-oauth/google";
+import { apiUrl } from "@/lib/apiUrl";
 
 const RESEND_COOLDOWN = 60;
 const GOOGLE_ENABLED = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -79,7 +80,7 @@ export default function SignUpPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await fetch(apiUrl("/api/auth/send-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), name: name.trim() }),
@@ -107,7 +108,7 @@ export default function SignUpPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await fetch(apiUrl("/api/auth/verify-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), otp, name: name.trim(), password }),
@@ -131,7 +132,7 @@ export default function SignUpPage() {
     if (cooldown > 0 || loading) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await fetch(apiUrl("/api/auth/send-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), name: name.trim() }),
@@ -155,7 +156,7 @@ export default function SignUpPage() {
     onSuccess: async (tokenResponse) => {
       setGoogleLoading(true);
       try {
-        const res = await fetch("/api/auth/google", {
+        const res = await fetch(apiUrl("/api/auth/google"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: tokenResponse.access_token }),

@@ -4,9 +4,11 @@ import { Loader2, Bell, Search, CheckCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 
+import { apiUrl } from "@/lib/apiUrl";
+
 function adminFetch(url: string) {
   const token = localStorage.getItem("token");
-  return fetch(url, {
+  return fetch(apiUrl(url), {
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

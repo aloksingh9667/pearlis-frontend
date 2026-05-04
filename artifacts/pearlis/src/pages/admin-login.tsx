@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Shield, Eye, EyeOff } from "lucide-react";
+import { apiUrl } from "@/lib/apiUrl";
 
 type View = "login" | "otp-login" | "forgot" | "forgot-otp" | "create" | "create-otp";
 
 async function apiFetch(path: string, body: Record<string, string>) {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(apiUrl(`/api${path}`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

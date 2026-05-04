@@ -15,6 +15,7 @@ import {
   Clock, Instagram, Play, ChevronLeft, ChevronRight, ExternalLink,
 } from "lucide-react";
 import { useGetSettings } from "@/lib/adminApi";
+import { apiUrl } from "@/lib/apiUrl";
 
 /* ══════════════════════════════════════════════════════════
    CATEGORIES CAROUSEL
@@ -973,7 +974,7 @@ function NewsletterForm() {
     if (!email.trim()) return;
     setLoading(true);
     try {
-      await fetch("/api/newsletter/subscribe", {
+      await fetch(apiUrl("/api/newsletter/subscribe"), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });

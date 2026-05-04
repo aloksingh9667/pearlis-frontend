@@ -8,6 +8,7 @@ import { Loader2, Save, Plus, Trash2, Upload, X, ImageIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { useGetPageContent, useUpdatePageContent } from "@/lib/adminApi";
 import { useListCategories } from "@workspace/api-client-react";
+import { apiUrl, adminHeaders } from "@/lib/apiUrl";
 
 /* ── Static pages always present ── */
 const STATIC_PAGES = [
@@ -23,15 +24,10 @@ const CAT_EMOJIS: Record<string, string> = {
   pendants: "🔮", bangles: "⭕", anklets: "🦶",
 };
 
-function adminHeaders(extra: Record<string, string> = {}) {
-  const token = localStorage.getItem("token");
-  return { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra };
-}
-
 async function uploadImage(file: File): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch("/api/upload", {
+  const res = await fetch(apiUrl("/api/upload"), {
     method: "POST",
     headers: adminHeaders(),
     body: fd,

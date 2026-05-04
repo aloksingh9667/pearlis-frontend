@@ -239,10 +239,12 @@ export default function VideosPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
+  const API_ORIGIN = import.meta.env.VITE_API_URL ?? "";
+
   useEffect(() => {
     Promise.all([
-      fetch("/api/videos").then(r => r.json()).catch(() => []),
-      fetch("/api/settings").then(r => r.json()).catch(() => ({})),
+      fetch(`${API_ORIGIN}/api/videos`).then(r => r.json()).catch(() => []),
+      fetch(`${API_ORIGIN}/api/settings`).then(r => r.json()).catch(() => ({})),
     ]).then(([tableVideos, settings]) => {
       const dbVideos: Video[] = Array.isArray(tableVideos) ? tableVideos : [];
       const settingsVideos: Video[] = (Array.isArray(settings?.videos) ? (settings.videos as any[]) : [])

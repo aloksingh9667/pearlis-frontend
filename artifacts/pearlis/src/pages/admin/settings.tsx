@@ -9,6 +9,7 @@ import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Insta
 import { useToast } from "@/hooks/use-toast";
 import { useGetSettings, useUpdateSetting, type SiteSettings, type PriceRange, type RingRow, type BraceletRow, type NecklaceRow } from "@/lib/adminApi";
 import { useListCategories } from "@workspace/api-client-react";
+import { apiUrl } from "@/lib/apiUrl";
 
 const TABS = [
   { id: "branding", label: "Branding", icon: Palette },
@@ -800,7 +801,7 @@ function LogoUploadButton({ onUrl, label }: { onUrl: (url: string) => void; labe
       const token = localStorage.getItem("token");
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       onUrl(data.url);
@@ -831,7 +832,7 @@ function VideoUploadButton({ onUrl, label }: { onUrl: (url: string) => void; lab
       const token = localStorage.getItem("token");
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       onUrl(data.url);
@@ -867,7 +868,7 @@ function IgUploadButton({ accept, label, icon, onUrls }: {
       try {
         const fd = new FormData();
         fd.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+        const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
         if (!res.ok) continue;
         const data = await res.json();
         results.push(data.url);

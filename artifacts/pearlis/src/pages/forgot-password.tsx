@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, CheckCircle2, AlertCircle, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl } from "@/lib/apiUrl";
 
 const RESEND_COOLDOWN = 60;
 
@@ -43,7 +44,7 @@ export default function ForgotPassword() {
     setEmail(value);
     if (value.includes("@") && value.includes(".") && value.length > 5) {
       try {
-        const res = await fetch("/api/auth/check-email", {
+        const res = await fetch(apiUrl("/api/auth/check-email"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: value }),
@@ -63,7 +64,7 @@ export default function ForgotPassword() {
     if (!email.trim() || cooldown > 0) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/forgot-password", {
+      const res = await fetch(apiUrl("/api/auth/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

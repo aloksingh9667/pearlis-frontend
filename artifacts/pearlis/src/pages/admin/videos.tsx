@@ -11,6 +11,7 @@ import { Loader2, Plus, Edit, Trash2, X, Upload, Video, Play, Youtube, Instagram
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiUrl, adminHeaders } from "@/lib/apiUrl";
 
 type VideoItem = {
   id: number; title: string; description?: string;
@@ -33,18 +34,13 @@ const emptyForm: VideoForm = {
 
 const CATEGORIES = ["lookbook", "behind the scenes", "product", "campaign"];
 
-function adminHeaders(extra: Record<string, string> = {}) {
-  const token = localStorage.getItem("token");
-  return { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra };
-}
-
 async function fetchVideos(): Promise<VideoItem[]> {
-  const res = await fetch("/api/videos/all", { headers: adminHeaders() });
+  const res = await fetch(apiUrl("/api/videos/all"), { headers: adminHeaders() });
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 }
 async function saveVideo(data: VideoForm, id?: number) {
-  const url = id ? `/api/videos/${id}` : "/api/videos";
+  const url = id ? apiUrl(`/api/videos/${id}`) : apiUrl("/api/videos");
   const res = await fetch(url, {
     method: id ? "PUT" : "POST",
     headers: adminHeaders({ "Content-Type": "application/json" }),
@@ -54,7 +50,7 @@ async function saveVideo(data: VideoForm, id?: number) {
   return res.json();
 }
 async function deleteVideo(id: number) {
-  const res = await fetch(`/api/videos/${id}`, { method: "DELETE", headers: adminHeaders() });
+  const res = await fetch(apiUrl(`/api/videos/${id}`), { method: "DELETE", headers: adminHeaders() });
   if (!res.ok) throw new Error("Failed to delete");
   return res.json();
 }
@@ -105,7 +101,7 @@ export default function AdminVideos() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/upload", {
+      const res = await fetch(apiUrl("/api/upload"), {
         method: "POST",
         headers: { "x-admin-token": btoa("admin@pearlis.com:Pearl@Admin2024") },
         body: fd,

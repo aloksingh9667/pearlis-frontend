@@ -12,6 +12,7 @@ import {
   User, Lock, MapPin, Package, LogOut, Loader2,
   Plus, Trash2, CheckCircle2, Eye, EyeOff, ChevronRight
 } from "lucide-react";
+import { apiUrl } from "@/lib/apiUrl";
 
 type Tab = "profile" | "password" | "addresses" | "orders";
 
@@ -23,7 +24,7 @@ function useAddresses(token: string | null) {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/users/addresses", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl("/api/users/addresses"), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setAddresses(await res.json());
     } finally { setLoading(false); }
   };
@@ -78,7 +79,7 @@ export default function Account() {
     if (!name.trim()) return;
     setProfileLoading(true);
     try {
-      const res = await fetch("/api/users/profile", {
+      const res = await fetch(apiUrl("/api/users/profile"), {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name }),
@@ -107,7 +108,7 @@ export default function Account() {
     }
     setPwLoading(true);
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const res = await fetch(apiUrl("/api/auth/change-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ currentPassword, newPassword }),
@@ -127,7 +128,7 @@ export default function Account() {
     e.preventDefault();
     setAddrSaving(true);
     try {
-      const res = await fetch("/api/users/addresses", {
+      const res = await fetch(apiUrl("/api/users/addresses"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(addrForm),
@@ -148,7 +149,7 @@ export default function Account() {
 
   const handleDeleteAddress = async (id: number) => {
     try {
-      await fetch(`/api/users/addresses/${id}`, {
+      await fetch(apiUrl(`/api/users/addresses/${id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -160,7 +161,7 @@ export default function Account() {
   const handleSetDefault = async (id: number) => {
     setSettingDefaultId(id);
     try {
-      const res = await fetch(`/api/users/addresses/${id}`, {
+      const res = await fetch(apiUrl(`/api/users/addresses/${id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ isDefault: true }),
