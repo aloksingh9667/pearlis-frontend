@@ -114,17 +114,17 @@ export default function AdminReports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-serif text-3xl">Reports</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl">Reports</h1>
           <p className="text-sm text-muted-foreground mt-1">Analytics and performance overview</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Period switcher */}
-          <div className="flex border border-border">
+          <div className="flex border border-border overflow-x-auto flex-shrink-0">
             {PERIODS.map(p => (
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
-                className={`px-3 py-2 text-[10px] tracking-widest uppercase font-semibold transition-colors ${
+                className={`px-3 py-2 text-[10px] tracking-widest uppercase font-semibold transition-colors whitespace-nowrap ${
                   period === p.id
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:bg-muted"
@@ -137,7 +137,7 @@ export default function AdminReports() {
           <button
             onClick={() => report && exportCSV(report, period)}
             disabled={!report}
-            className="flex items-center gap-2 border border-border px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40"
+            className="flex items-center gap-2 border border-border px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40 whitespace-nowrap flex-shrink-0"
           >
             <Download className="w-3.5 h-3.5" />
             CSV
@@ -252,10 +252,10 @@ export default function AdminReports() {
               {statusData.length === 0 ? (
                 <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">No orders in this period.</div>
               ) : (
-                <div className="flex items-center gap-6">
-                  <ResponsiveContainer width="55%" height={200}>
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                  <ResponsiveContainer width="100%" height={180} className="sm:w-[55%] sm:flex-shrink-0">
                     <PieChart>
-                      <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
+                      <Pie data={statusData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
                         {statusData.map((entry: any, i: number) => (
                           <Cell key={i} fill={entry.color} />
                         ))}
@@ -263,11 +263,11 @@ export default function AdminReports() {
                       <Tooltip formatter={(v: any) => [`${v} orders`, ""]} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-wrap sm:flex-col gap-x-4 gap-y-2">
                     {statusData.map((s: any) => (
                       <div key={s.name} className="flex items-center gap-2 text-xs">
                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                        <span className="capitalize text-muted-foreground w-20">{s.name}</span>
+                        <span className="capitalize text-muted-foreground">{s.name}</span>
                         <span className="font-semibold">{s.value}</span>
                       </div>
                     ))}
