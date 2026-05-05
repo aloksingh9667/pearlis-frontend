@@ -50,5 +50,34 @@ pnpm run build
 - Build command: `pnpm run build`
 - Public dir: `dist`
 
+## Features
+
+### User-Facing
+- Product catalogue, search, wishlist, cart, checkout (Razorpay + COD)
+- Order detail page with live status stepper, printable PDF invoice
+- **Return/Refund Request**: Banner on delivered orders opens a modal with reason selector, return policy, description, and API call to `POST /api/orders/:id/return-request`
+- Blog / Journal, Gallery, Videos lookbook, Newsletter signup
+- Google OAuth + email/password authentication
+
+### Admin Dashboard (`/admin/*`)
+- Dashboard, Reports (analytics with period switcher), Products, Categories, Orders
+- **Returns & Refunds** (`/admin/returns`): View all return requests, filter by status, expand each request to add an admin note and approve/reject/reset
+- Coupons, Reviews moderation, Stock Alerts, Newsletter subscribers
+- Journal (blog) management, Videos management, Page Content editor
+
+### Backend Routes (Express + Drizzle + PostgreSQL)
+- `POST /api/orders/:id/return-request` — customer submits a return request
+- `GET /api/admin/return-requests?status=` — admin list with optional status filter
+- `PATCH /api/admin/return-requests/:id` — admin updates status + note
+- Return requests stored in `return_requests` table (auto-created via raw SQL if not exists)
+
+## Mobile Responsiveness
+All admin pages use `overflow-x-auto` on tables. Additional mobile fixes applied:
+- Orders: mobile accordion card view (< md), table view (≥ md)
+- Coupons: stats grid `grid-cols-1 sm:grid-cols-3`
+- Blogs: modal form grid `grid-cols-1 sm:grid-cols-2`
+- Reviews: removed extra padding wrapper that doubled the gutter
+- Reports: period switcher uses `flex-wrap` and `whitespace-nowrap` buttons
+
 ## Workflow
 - **Start application**: `PORT=5000 pnpm --filter @workspace/pearlis run dev` on port 5000
