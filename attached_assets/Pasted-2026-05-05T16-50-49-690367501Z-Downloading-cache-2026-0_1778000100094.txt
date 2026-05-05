@@ -1,0 +1,49 @@
+2026-05-05T16:50:49.690367501Z ==> Downloading cache...
+2026-05-05T16:50:49.725634359Z ==> Cloning from https://github.com/aloksingh9667/pearlis-backend
+2026-05-05T16:50:50.646157092Z ==> Checking out commit 9ffdce46c31aecb0834f72b4dedce7f8853e7bf7 in branch main
+2026-05-05T16:51:07.744953573Z ==> Downloaded 503MB in 3s. Extraction took 15s.
+2026-05-05T16:51:18.538024731Z info: using existing install for stable-x86_64-unknown-linux-gnu
+2026-05-05T16:51:18.549620593Z info: default toolchain set to stable-x86_64-unknown-linux-gnu
+2026-05-05T16:51:18.549648264Z 
+2026-05-05T16:51:18.567039276Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+2026-05-05T16:51:18.567058197Z 
+2026-05-05T16:51:18.635123958Z ==> Running build command 'npm install -g pnpm && pnpm install && pnpm --filter @workspace/api-server run build'...
+2026-05-05T16:51:18.785418169Z ==> Using Node.js version 24.14.1 (default)
+2026-05-05T16:51:18.816475047Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-05-05T16:51:20.231419714Z 
+2026-05-05T16:51:20.231440924Z changed 1 package in 1s
+2026-05-05T16:51:20.231449595Z 
+2026-05-05T16:51:20.231527567Z 1 package is looking for funding
+2026-05-05T16:51:20.231579368Z   run `npm fund` for details
+2026-05-05T16:51:21.947336752Z 
+2026-05-05T16:51:21.947365993Z > @workspace/api-server@0.0.0 build /opt/render/project/src/artifacts/api-server
+2026-05-05T16:51:21.947371713Z > node ./build.mjs
+2026-05-05T16:51:21.947375643Z 
+2026-05-05T16:51:22.070858716Z ✘ [ERROR] Unexpected end of file
+2026-05-05T16:51:22.070880867Z 
+2026-05-05T16:51:22.070947748Z     src/routes/orders.ts:1:14804:
+2026-05-05T16:51:22.070955119Z       1 │ ...4gcmVxdWVzdCIgfSk7CiAgfQp9KTsKCmV4cG9ydCBkZWZhdWx0IHJvdXRlcjsKCg==
+2026-05-05T16:51:22.070960659Z         ╵                                                                      ^
+2026-05-05T16:51:22.070977959Z 
+2026-05-05T16:51:22.084379428Z ✘ [ERROR] Unexpected end of file
+2026-05-05T16:51:22.084398018Z 
+2026-05-05T16:51:22.084413269Z     src/routes/email-auth.ts:1:9380:
+2026-05-05T16:51:22.084418559Z       1 │ ...I6ICJGYWlsZWQiIH0pOwogIH0KfSk7CgpleHBvcnQgZGVmYXVsdCByb3V0ZXI7Cg==
+2026-05-05T16:51:22.084422799Z         ╵                                                                      ^
+2026-05-05T16:51:22.084426689Z 
+2026-05-05T16:51:22.410543035Z 2 errors
+2026-05-05T16:51:22.412800394Z Error: Build failed with 2 errors:
+2026-05-05T16:51:22.412814374Z src/routes/email-auth.ts:1:9380: ERROR: Unexpected end of file
+2026-05-05T16:51:22.412818634Z src/routes/orders.ts:1:14804: ERROR: Unexpected end of file
+2026-05-05T16:51:22.412823824Z     at failureErrorWithLog (/opt/render/project/src/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1467:15)
+2026-05-05T16:51:22.412827994Z     at /opt/render/project/src/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:926:25
+2026-05-05T16:51:22.412830954Z     at /opt/render/project/src/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1345:9
+2026-05-05T16:51:22.412835095Z     at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+2026-05-05T16:51:22.412839004Z   errors: [Getter/Setter],
+2026-05-05T16:51:22.412842065Z   warnings: [Getter/Setter]
+2026-05-05T16:51:22.412845095Z }
+2026-05-05T16:51:22.435912485Z /opt/render/project/src/artifacts/api-server:
+2026-05-05T16:51:22.435935846Z  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 build: `node ./build.mjs`
+2026-05-05T16:51:22.435957176Z Exit status 1
+2026-05-05T16:51:22.527288733Z ==> Build failed 😞
+2026-05-05T16:51:22.527317633Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
