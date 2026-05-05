@@ -79,8 +79,8 @@ export default function AdminBlogs() {
 
   return (
     <AdminLayout>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="font-serif text-3xl">Journal</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl">Journal</h1>
         <Button className="rounded-none uppercase tracking-widest text-xs gap-2" onClick={openAdd}>
           <Plus className="w-4 h-4" /> New Post
         </Button>
@@ -138,7 +138,7 @@ export default function AdminBlogs() {
               </div>
               <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
                 <F label="Title *"><Input value={form.title} onChange={e => set("title", e.target.value)} className="rounded-none" placeholder="The Art of Gold Jewellery..." /></F>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <F label="Author *"><Input value={form.author} onChange={e => set("author", e.target.value)} className="rounded-none" placeholder="Aisha Patel" /></F>
                   <F label="Tags (comma separated)"><Input value={form.tags} onChange={e => set("tags", e.target.value)} className="rounded-none" placeholder="gold, bridal, trends" /></F>
                 </div>
