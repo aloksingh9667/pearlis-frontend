@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useGetMe, setAuthTokenGetter, setSessionIdGetter } from "@workspace/api-client-react";
+import { apiUrl } from "@/lib/apiUrl";
 
 function getOrCreateSessionId(): string {
   let id = localStorage.getItem("pearlis_session_id");
@@ -44,8 +45,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = user?.role === "admin";
 
   const login = (newToken: string) => {
+    const guestSessionId = localStorage.getItem("pearlis_session_id");
+
+    const mergeGuestCart = async () => {
+      if (!guestSessionId) return;
+      try {
+        const guestCartRes = await fetch(apiUrl("/api/cart"), {
+          headers: { "X-Session-Id": guestSessionId },
+        });
+        if (!guestCartRes.ok) return;
+        const guestCart = await guestCartRes.json();
+        const items: Array<{ productId: number; quantity: number }> = (guestCart.items || []).map(
+          (item: any) => ({ productId: item.productId, quantity: item.quantity })
+        );
+        if (items.length === 0) return;
+        await Promise.all(
+          items.map((item) =>
+            fetch(apiUrl("/api/cart/items"), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${newToken}`,
+              },
+              body: JSON.stringify({ productId: item.productId, quantity: item.quantity }),
+            }).catch(() => {})
+          )
+        );
+      } catch {
+      }
+    };
+
     localStorage.setItem("token", newToken);
     setToken(newToken);
+    mergeGuestCart();
   };
 
   const logout = () => {
