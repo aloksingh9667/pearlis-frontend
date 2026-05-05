@@ -81,3 +81,15 @@ All admin pages use `overflow-x-auto` on tables. Additional mobile fixes applied
 
 ## Workflow
 - **Start application**: `PORT=5000 pnpm --filter @workspace/pearlis run dev` on port 5000
+
+## GitHub Sync
+Both frontend and backend repos are linked via `GITHUB_ACCESS_TOKEN` secret.
+
+- **Frontend repo**: https://github.com/aloksingh9667/pearlis-frontend
+- **Backend repo**: https://github.com/aloksingh9667/pearlis-backend
+- **Backend code**: cloned into `/backend/` folder (excluded from frontend tracking via `.gitignore`)
+
+To push changes to both repos at once, run:
+```bash
+bash push-all.sh
+```
