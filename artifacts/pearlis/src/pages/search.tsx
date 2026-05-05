@@ -75,8 +75,10 @@ export default function SearchPage() {
       { name: "category", weight: 0.15 },
       { name: "material", weight: 0.05 },
     ],
-    threshold: 0.4,
-    minMatchCharLength: 2,
+    threshold: 0.5,
+    minMatchCharLength: 1,
+    ignoreLocation: true,
+    distance: 200,
     includeScore: true,
   }), [allProducts]);
 

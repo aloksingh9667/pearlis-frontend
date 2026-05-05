@@ -137,8 +137,10 @@ export function Navbar() {
       { name: "description", weight: 0.2 },
       { name: "category", weight: 0.15 },
     ],
-    threshold: 0.4,
-    minMatchCharLength: 2,
+    threshold: 0.5,
+    minMatchCharLength: 1,
+    ignoreLocation: true,
+    distance: 200,
     includeScore: true,
   }), [allProducts]);
 
