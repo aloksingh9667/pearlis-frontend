@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Product, useAddToCart, useAddToWishlist, useRemoveFromWishlist, useGetWishlist, getGetCartQueryKey } from "@workspace/api-client-react";
+import { Product, useAddToCart, useAddToWishlist, useRemoveFromWishlist, useGetWishlist, getGetCartQueryKey, getGetWishlistQueryKey } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
-import { Heart, Star, ShoppingBag, Loader2 } from "lucide-react";
+import { Heart, Star, ShoppingBag, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,19 +29,29 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const [cartFlash, setCartFlash] = useState(false);
+
   const isWishlisted = wishlist?.some((w: any) => w.id === product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Optimistic: flash checkmark + toast instantly
+    setCartFlash(true);
+    toast({ title: "Added to bag", description: product.name });
+    setTimeout(() => setCartFlash(false), 1800);
+
     addToCart.mutate(
       { data: { productId: product.id, quantity: 1 } },
       {
         onSuccess: (updatedCart) => {
           queryClient.setQueryData(getGetCartQueryKey(), updatedCart);
-          toast({ title: "Added to bag", description: product.name });
         },
-        onError: () => toast({ title: "Could not add to bag", variant: "destructive" }),
+        onError: () => {
+          setCartFlash(false);
+          toast({ title: "Could not add to bag", variant: "destructive" });
+        },
       }
     );
   };
@@ -52,13 +63,25 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
       setLocation(`/sign-in?redirect=/product/${product.id}`);
       return;
     }
+
+    const wishlistKey = getGetWishlistQueryKey();
+    const prev = queryClient.getQueryData<any[]>(wishlistKey) ?? [];
+
     if (isWishlisted) {
+      // Optimistic remove
+      queryClient.setQueryData(wishlistKey, prev.filter((w: any) => w.id !== product.id));
       removeFromWishlist.mutate({ productId: product.id }, {
-        onSuccess: () => toast({ title: "Removed from wishlist" }),
+        onError: () => queryClient.setQueryData(wishlistKey, prev),
       });
     } else {
+      // Optimistic add
+      queryClient.setQueryData(wishlistKey, [...prev, { id: product.id, ...product }]);
+      toast({ title: "Saved to wishlist", description: product.name });
       addToWishlist.mutate({ productId: product.id }, {
-        onSuccess: () => toast({ title: "Saved to wishlist", description: product.name }),
+        onError: () => {
+          queryClient.setQueryData(wishlistKey, prev);
+          toast({ title: "Could not save", variant: "destructive" });
+        },
       });
     }
   };
@@ -93,11 +116,11 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
             )}
           </div>
 
-          {/* Wishlist heart */}
+          {/* Wishlist heart — optimistic toggle */}
           <button
-            className={`absolute top-2.5 right-2.5 z-10 w-7 h-7 backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-md ${
+            className={`absolute top-2.5 right-2.5 z-10 w-7 h-7 backdrop-blur-sm flex items-center justify-center transition-all duration-200 shadow-md ${
               isWishlisted
-                ? "bg-[#D4AF37] text-white opacity-100"
+                ? "bg-[#D4AF37] text-white opacity-100 scale-110"
                 : "bg-white/90 text-[#0F0F0F] opacity-0 group-hover:opacity-100 hover:bg-[#D4AF37] hover:text-white"
             }`}
             onClick={handleWishlist}
@@ -122,19 +145,22 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
             )}
           </div>
 
-          {/* Hover overlay — Add to Cart */}
+          {/* Hover overlay — Add to Cart (optimistic) */}
           <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
             {showCartButton ? (
               <button
                 onClick={handleAddToCart}
-                disabled={addToCart.isPending || product.stock === 0}
-                className="w-full bg-[#0F0F0F]/95 backdrop-blur-sm text-white py-2.5 text-center text-[9px] font-bold tracking-[0.22em] uppercase hover:bg-[#D4AF37] transition-colors duration-200 flex items-center justify-center gap-1.5 disabled:opacity-60"
+                disabled={product.stock === 0}
+                className={`w-full py-2.5 text-center text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-60 ${
+                  cartFlash
+                    ? "bg-[#D4AF37] text-white"
+                    : "bg-[#0F0F0F]/95 backdrop-blur-sm text-white hover:bg-[#D4AF37]"
+                }`}
               >
-                {addToCart.isPending
-                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                  : <ShoppingBag className="w-3 h-3" />
+                {cartFlash
+                  ? <><Check className="w-3 h-3" /> Added</>
+                  : <><ShoppingBag className="w-3 h-3" /> {product.stock === 0 ? "Sold Out" : "Add to Bag"}</>
                 }
-                {product.stock === 0 ? "Sold Out" : "Add to Bag"}
               </button>
             ) : (
               <div className="bg-[#0F0F0F]/95 backdrop-blur-sm text-white py-2.5 text-center text-[9px] font-bold tracking-[0.25em] uppercase hover:bg-[#D4AF37] transition-colors duration-200">

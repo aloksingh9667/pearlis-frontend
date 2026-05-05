@@ -21,7 +21,7 @@ import { apiUrl } from "@/lib/apiUrl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Heart, Share2, ShieldCheck, Truck, RefreshCcw,
-  Star, ChevronLeft, ChevronRight, Award, Minus, Plus, Tag, Play,
+  Star, ChevronLeft, ChevronRight, Award, Minus, Plus, Tag, Play, Check,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { useRecentlyViewed, recordView } from "@/hooks/useRecentlyViewed";
@@ -176,16 +176,46 @@ export default function ProductPage() {
     setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
   };
 
+  const [cartFlash, setCartFlash] = useState(false);
+
   const handleAddToCart = () => {
+    // Optimistic: instant feedback
+    setCartFlash(true);
+    toast({ title: "Added to bag" });
+    setTimeout(() => setCartFlash(false), 1800);
+
     addToCart.mutate(
       { data: { productId, quantity, size: undefined } },
-      { onSuccess: () => toast({ title: "Added to bag" }) }
+      {
+        onSuccess: (updatedCart) => {
+          queryClient.setQueryData(getGetCartQueryKey(), updatedCart);
+        },
+        onError: () => {
+          setCartFlash(false);
+          toast({ title: "Could not add to bag", variant: "destructive" });
+        },
+      }
     );
   };
 
   const handleWishlist = () => {
-    if (isWishlisted) removeFromWishlist.mutate({ id: productId });
-    else addToWishlist.mutate({ data: { productId } });
+    const wishlistKey = ["/api/wishlist"];
+    const prev = queryClient.getQueryData<any[]>(wishlistKey) ?? [];
+    if (isWishlisted) {
+      queryClient.setQueryData(wishlistKey, prev.filter((w: any) => w.id !== productId));
+      removeFromWishlist.mutate({ id: productId }, {
+        onError: () => queryClient.setQueryData(wishlistKey, prev),
+      });
+    } else {
+      queryClient.setQueryData(wishlistKey, [...prev, { id: productId, ...product }]);
+      toast({ title: "Saved to wishlist" });
+      addToWishlist.mutate({ data: { productId } }, {
+        onError: () => {
+          queryClient.setQueryData(wishlistKey, prev);
+          toast({ title: "Could not save", variant: "destructive" });
+        },
+      });
+    }
   };
 
   const scrollCarousel = (dir: "left" | "right") => {
@@ -452,10 +482,12 @@ export default function ProductPage() {
             <div className="flex flex-col sm:flex-row gap-2.5 mb-8 min-w-0">
               <button
                 onClick={handleAddToCart}
-                disabled={addToCart.isPending || product.stock === 0}
-                className="w-full min-h-14 rounded-full bg-[#0F0F0F] hover:bg-[#1c1c1c] text-white text-[10px] tracking-[0.25em] uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 px-6 py-4 sm:py-0 disabled:opacity-40 hover:shadow-[0_16px_32px_rgba(15,15,15,0.18)] active:scale-[0.98]"
+                disabled={product.stock === 0}
+                className={`w-full min-h-14 rounded-full text-white text-[10px] tracking-[0.25em] uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 px-6 py-4 sm:py-0 disabled:opacity-40 hover:shadow-[0_16px_32px_rgba(15,15,15,0.18)] active:scale-[0.98] ${
+                  cartFlash ? "bg-[#D4AF37]" : "bg-[#0F0F0F] hover:bg-[#1c1c1c]"
+                }`}
               >
-                {addToCart.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : product.stock === 0 ? "Out of Stock" : "Add to Bag"}
+                {cartFlash ? <><Check className="w-4 h-4" /> Added to Bag</> : product.stock === 0 ? "Out of Stock" : "Add to Bag"}
               </button>
               <div className="grid grid-cols-2 gap-2.5 sm:contents">
                 <button

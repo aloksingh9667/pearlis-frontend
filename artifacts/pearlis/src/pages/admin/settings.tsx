@@ -199,7 +199,7 @@ export default function AdminSettings() {
                     <div className="space-y-4 pt-1">
                       {/* Test / Live mode toggle */}
                       <div className="space-y-2">
-                        <Label className="uppercase tracking-widest text-xs text-muted-foreground">Mode</Label>
+                        <Label className="uppercase tracking-widest text-xs text-muted-foreground">Active Mode</Label>
                         <div className="flex gap-0 border border-border w-fit">
                           {(["test", "live"] as const).map(mode => (
                             <button
@@ -219,32 +219,52 @@ export default function AdminSettings() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {(draft.payment?.razorpayMode ?? "test") === "test"
-                            ? "Test mode — payments are simulated, no real money charged. Use Razorpay test keys (rzp_test_...)."
-                            : "Live mode — real payments are processed. Ensure your live keys and webhook are configured."}
+                            ? "Test mode — payments are simulated. No real money is charged."
+                            : "Live mode — real payments are processed. Make sure live keys are set on the server."}
                         </p>
                       </div>
 
-                      {/* Test Key ID */}
-                      <Field label="Test Key ID (rzp_test_...)">
-                        <Input
-                          value={draft.payment?.razorpayTestKeyId || ""}
-                          onChange={e => updateNested("payment", "razorpayTestKeyId", e.target.value)}
-                          className="rounded-none font-mono"
-                          placeholder="rzp_test_..."
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Used when mode is set to Test. Store the Test Secret in <code className="bg-muted px-1 rounded text-xs">RAZORPAY_TEST_KEY_SECRET</code> env var.</p>
-                      </Field>
+                      {/* Env var reference — keys are stored on the server, not here */}
+                      <div className="rounded-none border border-border bg-muted/30 p-4 space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Backend Environment Variables</p>
+                        <p className="text-xs text-muted-foreground">Keys are stored securely as environment variables on your server (Render). Never paste them here.</p>
 
-                      {/* Live Key ID */}
-                      <Field label="Live Key ID (rzp_live_...)">
-                        <Input
-                          value={draft.payment?.razorpayKeyId || ""}
-                          onChange={e => updateNested("payment", "razorpayKeyId", e.target.value)}
-                          className="rounded-none font-mono"
-                          placeholder="rzp_live_..."
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Used when mode is set to Live. Store the Live Secret in <code className="bg-muted px-1 rounded text-xs">RAZORPAY_LIVE_KEY_SECRET</code> env var.</p>
-                      </Field>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                          {/* Test vars */}
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] uppercase tracking-widest text-accent font-semibold">🧪 Test Mode</p>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 bg-muted p-2">
+                                <code className="text-xs font-mono text-foreground flex-1">RAZORPAY_TEST_KEY_ID</code>
+                                <span className="text-[10px] text-muted-foreground">Key ID</span>
+                              </div>
+                              <div className="flex items-center gap-2 bg-muted p-2">
+                                <code className="text-xs font-mono text-foreground flex-1">RAZORPAY_TEST_KEY_SECRET</code>
+                                <span className="text-[10px] text-muted-foreground">Secret</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Live vars */}
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] uppercase tracking-widest text-green-600 font-semibold">🟢 Live Mode</p>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 bg-muted p-2">
+                                <code className="text-xs font-mono text-foreground flex-1">RAZORPAY_LIVE_KEY_ID</code>
+                                <span className="text-[10px] text-muted-foreground">Key ID</span>
+                              </div>
+                              <div className="flex items-center gap-2 bg-muted p-2">
+                                <code className="text-xs font-mono text-foreground flex-1">RAZORPAY_LIVE_KEY_SECRET</code>
+                                <span className="text-[10px] text-muted-foreground">Secret</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-muted-foreground border-t border-border pt-2 mt-1">
+                          Set these in your Render dashboard under <strong>Environment → Environment Variables</strong>. The backend automatically picks the correct pair based on the Active Mode selected above.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
