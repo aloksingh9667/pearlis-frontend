@@ -94,15 +94,15 @@ export default function AdminReviews() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-6xl mx-auto space-y-8">
+      <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-serif text-3xl text-[#0F0F0F] mb-1">Customer Reviews</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl text-[#0F0F0F] mb-1">Customer Reviews</h1>
           <p className="text-sm text-muted-foreground">Moderate and manage all product reviews</p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: "Total Reviews", value: total, color: "text-[#0F0F0F]" },
             { label: "Approved", value: approved, color: "text-green-600" },
