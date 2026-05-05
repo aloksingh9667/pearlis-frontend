@@ -88,6 +88,14 @@ export type SiteSettings = {
     braceletRows: BraceletRow[];
     necklaceRows: NecklaceRow[];
   };
+  emailNotifications: {
+    orderConfirmation: boolean;
+    orderStatusUpdate: boolean;
+    returnStatusUpdate: boolean;
+    stockAlert: boolean;
+    otpVerification: boolean;
+    passwordReset: boolean;
+  };
 };
 
 export function useGetSettings() {

@@ -25,6 +25,7 @@ const TABS = [
   { id: "shopFilters", label: "Shop Filters", icon: SlidersHorizontal },
   { id: "navbarCategories", label: "Navbar", icon: Navigation },
   { id: "sizeGuide", label: "Size Guide", icon: Ruler },
+  { id: "emailNotifications", label: "Email Alerts", icon: Bell },
   { id: "server", label: "Server", icon: Server },
 ] as const;
 
@@ -850,6 +851,77 @@ export default function AdminSettings() {
                   <span className="ml-auto text-xs text-white/30 block mt-2">Live preview after Save</span>
                 </div>
               )}
+            </Section>
+          )}
+
+          {/* EMAIL NOTIFICATIONS */}
+          {activeTab === "emailNotifications" && (
+            <Section title="Email Notifications" onSave={() => save("emailNotifications")} saving={saving}>
+              <p className="text-sm text-muted-foreground -mt-2 mb-6">
+                Control which transactional emails are sent to customers. Toggle off any type to stop that email from being delivered. All are enabled by default.
+              </p>
+              <div className="space-y-0 divide-y divide-border border border-border">
+                <div className="flex items-center justify-between px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium">Order Confirmation</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Sent to the customer immediately after they place an order.</p>
+                  </div>
+                  <Switch
+                    checked={draft.emailNotifications?.orderConfirmation ?? true}
+                    onCheckedChange={v => updateNested("emailNotifications", "orderConfirmation", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium">Order Status Update</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Sent when you change an order's status (confirmed, shipped, delivered, cancelled).</p>
+                  </div>
+                  <Switch
+                    checked={draft.emailNotifications?.orderStatusUpdate ?? true}
+                    onCheckedChange={v => updateNested("emailNotifications", "orderStatusUpdate", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium">Return Request Status</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Sent when you approve or reject a customer's return / refund request.</p>
+                  </div>
+                  <Switch
+                    checked={draft.emailNotifications?.returnStatusUpdate ?? true}
+                    onCheckedChange={v => updateNested("emailNotifications", "returnStatusUpdate", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium">Back in Stock Alert</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Sent to customers who subscribed to be notified when an out-of-stock product becomes available.</p>
+                  </div>
+                  <Switch
+                    checked={draft.emailNotifications?.stockAlert ?? true}
+                    onCheckedChange={v => updateNested("emailNotifications", "stockAlert", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium">OTP / Email Verification</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Sent during account registration to verify the customer's email address.</p>
+                  </div>
+                  <Switch
+                    checked={draft.emailNotifications?.otpVerification ?? true}
+                    onCheckedChange={v => updateNested("emailNotifications", "otpVerification", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium">Password Reset</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Sent when a customer requests a password reset link.</p>
+                  </div>
+                  <Switch
+                    checked={draft.emailNotifications?.passwordReset ?? true}
+                    onCheckedChange={v => updateNested("emailNotifications", "passwordReset", v)}
+                  />
+                </div>
+              </div>
             </Section>
           )}
 
