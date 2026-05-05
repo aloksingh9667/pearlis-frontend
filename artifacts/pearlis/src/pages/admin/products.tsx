@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Edit, Trash2, X, ImagePlus, Upload, Video, PlusCircle, MinusCircle, Link2, GripVertical, Search } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, Edit, Trash2, X, ImagePlus, Upload, Video, PlusCircle, MinusCircle, Link2, GripVertical, Search, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiUrl } from "@/lib/apiUrl";
+import { format } from "date-fns";
 
 const toINR = (usd: number) => Math.round(usd * 83);
 const fmt = (inr: number) => `₹${inr.toLocaleString("en-IN")}`;
@@ -109,7 +110,7 @@ function toForm(p: any): ProductForm {
   };
 }
 
-const TABS = ["Basic Info", "Variants", "Description", "Specifications", "Shipping & Returns", "Media"] as const;
+const TABS = ["Basic Info", "Variants", "Description", "Specifications", "Shipping & Returns", "Media", "Stock Log"] as const;
 type Tab = typeof TABS[number];
 
 function adminToken() { return localStorage.getItem("token") || ""; }
@@ -130,6 +131,19 @@ export default function AdminProducts() {
   const [imgUploading, setImgUploading] = useState(false);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: stockHistory, isLoading: stockHistoryLoading } = useQuery({
+    queryKey: ["stock-history", modal.editId],
+    queryFn: async () => {
+      if (!modal.editId) return [];
+      const res = await fetch(apiUrl(`/api/products/${modal.editId}/stock-history`), {
+        headers: { Authorization: `Bearer ${adminToken()}` },
+      });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!modal.editId && activeTab === "Stock Log",
+  });
 
   const openAdd = () => { setForm(emptyForm); setActiveTab("Basic Info"); setModal({ open: true, editId: null }); };
   const openEdit = (product: any) => { setForm(toForm(product)); setActiveTab("Basic Info"); setModal({ open: true, editId: product.id }); };
@@ -626,6 +640,93 @@ export default function AdminProducts() {
                     </F>
 
                   </>
+                )}
+
+                {/* ── Stock Log ── */}
+                {activeTab === "Stock Log" && (
+                  <div className="space-y-4">
+                    {!modal.editId ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">Save the product first to see its stock history.</p>
+                    ) : stockHistoryLoading ? (
+                      <div className="flex items-center justify-center py-10 gap-2 text-muted-foreground text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Loading history…
+                      </div>
+                    ) : !stockHistory?.length ? (
+                      <div className="text-center py-10 text-muted-foreground text-sm">
+                        No stock movements recorded yet. Changes will appear here automatically.
+                      </div>
+                    ) : (
+                      <>
+                        {/* summary bar */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-muted/40 border border-border p-3">
+                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Current Stock</p>
+                            <p className="font-serif text-xl font-bold">{form.stock}</p>
+                          </div>
+                          <div className="bg-muted/40 border border-border p-3">
+                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Total Movements</p>
+                            <p className="font-serif text-xl font-bold">{stockHistory.length}</p>
+                          </div>
+                          <div className="bg-muted/40 border border-border p-3">
+                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Units Sold</p>
+                            <p className="font-serif text-xl font-bold text-red-500">
+                              {stockHistory.filter((h: any) => h.reason === "order_placed").reduce((s: number, h: any) => s + Math.abs(Number(h.change)), 0)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* history table */}
+                        <div className="border border-border overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-border bg-muted/30">
+                                <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">When</th>
+                                <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Reason</th>
+                                <th className="text-right px-4 py-2.5 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Before</th>
+                                <th className="text-right px-4 py-2.5 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Change</th>
+                                <th className="text-right px-4 py-2.5 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">After</th>
+                                <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Note</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stockHistory.map((h: any) => {
+                                const change = Number(h.change);
+                                const isPos = change > 0;
+                                const isNeg = change < 0;
+                                return (
+                                  <tr key={h.id} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
+                                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                                      {h.created_at ? format(new Date(h.created_at), "dd MMM yy, HH:mm") : "—"}
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                        h.reason === "order_placed"
+                                          ? "bg-red-50 text-red-600 border border-red-200"
+                                          : h.reason === "initial"
+                                          ? "bg-blue-50 text-blue-600 border border-blue-200"
+                                          : "bg-amber-50 text-amber-600 border border-amber-200"
+                                      }`}>
+                                        {h.reason === "order_placed" ? "Order" : h.reason === "initial" ? "Created" : "Manual Edit"}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right text-muted-foreground">{h.previous_stock}</td>
+                                    <td className="px-4 py-2.5 text-right font-semibold">
+                                      <span className={`inline-flex items-center gap-0.5 ${isPos ? "text-green-600" : isNeg ? "text-red-500" : "text-muted-foreground"}`}>
+                                        {isPos ? <TrendingUp className="w-3 h-3" /> : isNeg ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                        {isPos ? "+" : ""}{change}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right font-bold">{h.new_stock}</td>
+                                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[140px] truncate">{h.note || "—"}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
 
