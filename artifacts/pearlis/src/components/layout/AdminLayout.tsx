@@ -46,6 +46,28 @@ const NAV_GROUPS = [
   },
 ];
 
+function useOrderBadge() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch(apiUrl("/api/orders?status=pending&limit=1&page=1"), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setCount(Number(data.total || 0));
+      } catch {}
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return count;
+}
+
 function useKeepAlive() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
@@ -73,6 +95,7 @@ function useKeepAlive() {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   useKeepAlive();
+  const pendingOrders = useOrderBadge();
   const [location] = useLocation();
   const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -95,10 +118,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   const NavItem = ({ item, onClick }: { item: (typeof NAV_GROUPS)[0]["items"][0]; onClick?: () => void }) => {
     const isActive = item.href === "/admin" ? location === "/admin" : location.startsWith(item.href);
+    const badge = item.href === "/admin/orders" && pendingOrders > 0 ? pendingOrders : 0;
     return (
       <Link href={item.href} onClick={onClick}>
         <div
-          title={collapsed ? item.name : undefined}
+          title={collapsed ? `${item.name}${badge ? ` (${badge} pending)` : ""}` : undefined}
           className={`group relative flex items-center gap-3 py-2.5 rounded-sm transition-all cursor-pointer
             ${collapsed ? "justify-center px-0" : "px-4"}
             ${isActive
@@ -106,13 +130,29 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             }`}
         >
-          <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
-          {!collapsed && <span className="text-sm leading-none">{item.name}</span>}
+          <div className="relative flex-shrink-0">
+            <item.icon className="w-[18px] h-[18px]" />
+            {badge > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                {badge > 99 ? "99+" : badge}
+              </span>
+            )}
+          </div>
+          {!collapsed && (
+            <span className="text-sm leading-none flex-1 flex items-center justify-between">
+              {item.name}
+              {badge > 0 && (
+                <span className="ml-auto bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
+            </span>
+          )}
 
           {/* Tooltip when collapsed */}
           {collapsed && (
             <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 text-xs font-medium bg-popover text-popover-foreground border border-border rounded-sm shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50">
-              {item.name}
+              {item.name}{badge > 0 ? ` — ${badge} pending` : ""}
             </span>
           )}
         </div>
