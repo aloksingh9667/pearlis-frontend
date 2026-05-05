@@ -36,7 +36,14 @@ export type SiteSettings = {
   branding: { siteName: string; tagline: string; logoUrl: string; faviconUrl: string };
   general: { siteName: string; tagline: string; currency: string; currencySymbol: string; conversionRate: number };
   announcement: { enabled: boolean; text: string; link: string };
-  payment: { codEnabled: boolean; razorpayEnabled: boolean; razorpayKeyId: string };
+  payment: {
+    codEnabled: boolean;
+    razorpayEnabled: boolean;
+    razorpayMode: "test" | "live";
+    razorpayKeyId: string;
+    razorpayTestKeyId: string;
+  };
+  keepAlive: { enabled: boolean; intervalMinutes: number; pingUrl: string };
   contact: { email: string; phone: string; address: string; hours: string; whatsapp: string };
   social: { instagram: string; facebook: string; twitter: string; pinterest: string; youtube: string };
   instagram: { enabled: boolean; username: string; posts: string[] };

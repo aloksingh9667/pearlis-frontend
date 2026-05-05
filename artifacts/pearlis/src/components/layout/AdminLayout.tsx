@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiUrl } from "@/lib/apiUrl";
 import { 
   LayoutDashboard, ShoppingBag, Package, Users, FileText, Tag, LogOut,
   Settings, FileEdit, MessageSquare, Menu, X, ChevronDown, Video, Layers, Star, Bell, Mail, BarChart2
@@ -44,7 +45,42 @@ const NAV_GROUPS = [
   },
 ];
 
+function useKeepAlive() {
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      try {
+        const res = await fetch(apiUrl("/api/settings/keepAlive"));
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const cfg = data?.value ?? data;
+        if (!cfg?.enabled || !cfg?.pingUrl) return;
+
+        const ms = Math.max(1, cfg.intervalMinutes ?? 14) * 60 * 1000;
+
+        const ping = () => {
+          fetch(cfg.pingUrl, { mode: "no-cors" }).catch(() => {});
+        };
+
+        ping();
+        intervalRef.current = setInterval(ping, ms);
+      } catch {}
+    }
+
+    init();
+
+    return () => {
+      cancelled = true;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+}
+
 export function AdminLayout({ children }: { children: React.ReactNode }) {
+  useKeepAlive();
   const [location] = useLocation();
   const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);

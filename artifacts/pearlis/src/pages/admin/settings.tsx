@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGetSettings, useUpdateSetting, type SiteSettings, type PriceRange, type RingRow, type BraceletRow, type NecklaceRow } from "@/lib/adminApi";
 import { useListCategories } from "@workspace/api-client-react";
@@ -25,6 +25,7 @@ const TABS = [
   { id: "shopFilters", label: "Shop Filters", icon: SlidersHorizontal },
   { id: "navbarCategories", label: "Navbar", icon: Navigation },
   { id: "sizeGuide", label: "Size Guide", icon: Ruler },
+  { id: "server", label: "Server", icon: Server },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -73,7 +74,7 @@ export default function AdminSettings() {
 
   return (
     <AdminLayout>
-      <h1 className="font-serif text-3xl mb-8">Site Settings</h1>
+      <h1 className="font-serif text-2xl sm:text-3xl mb-8">Site Settings</h1>
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Tab Sidebar */}
@@ -195,9 +196,56 @@ export default function AdminSettings() {
                     />
                   </div>
                   {draft.payment?.razorpayEnabled && (
-                    <Field label="Razorpay Key ID">
-                      <Input value={draft.payment?.razorpayKeyId || ""} onChange={e => updateNested("payment", "razorpayKeyId", e.target.value)} className="rounded-none font-mono" placeholder="rzp_live_..." />
-                    </Field>
+                    <div className="space-y-4 pt-1">
+                      {/* Test / Live mode toggle */}
+                      <div className="space-y-2">
+                        <Label className="uppercase tracking-widest text-xs text-muted-foreground">Mode</Label>
+                        <div className="flex gap-0 border border-border w-fit">
+                          {(["test", "live"] as const).map(mode => (
+                            <button
+                              key={mode}
+                              onClick={() => updateNested("payment", "razorpayMode", mode)}
+                              className={`px-5 py-2 text-xs uppercase tracking-widest font-medium transition-colors ${
+                                (draft.payment?.razorpayMode ?? "test") === mode
+                                  ? mode === "live"
+                                    ? "bg-green-600 text-white"
+                                    : "bg-accent text-accent-foreground"
+                                  : "text-muted-foreground hover:bg-muted"
+                              }`}
+                            >
+                              {mode === "test" ? "🧪 Test" : "🟢 Live"}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {(draft.payment?.razorpayMode ?? "test") === "test"
+                            ? "Test mode — payments are simulated, no real money charged. Use Razorpay test keys (rzp_test_...)."
+                            : "Live mode — real payments are processed. Ensure your live keys and webhook are configured."}
+                        </p>
+                      </div>
+
+                      {/* Test Key ID */}
+                      <Field label="Test Key ID (rzp_test_...)">
+                        <Input
+                          value={draft.payment?.razorpayTestKeyId || ""}
+                          onChange={e => updateNested("payment", "razorpayTestKeyId", e.target.value)}
+                          className="rounded-none font-mono"
+                          placeholder="rzp_test_..."
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Used when mode is set to Test. Store the Test Secret in <code className="bg-muted px-1 rounded text-xs">RAZORPAY_TEST_KEY_SECRET</code> env var.</p>
+                      </Field>
+
+                      {/* Live Key ID */}
+                      <Field label="Live Key ID (rzp_live_...)">
+                        <Input
+                          value={draft.payment?.razorpayKeyId || ""}
+                          onChange={e => updateNested("payment", "razorpayKeyId", e.target.value)}
+                          className="rounded-none font-mono"
+                          placeholder="rzp_live_..."
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Used when mode is set to Live. Store the Live Secret in <code className="bg-muted px-1 rounded text-xs">RAZORPAY_LIVE_KEY_SECRET</code> env var.</p>
+                      </Field>
+                    </div>
                   )}
                 </div>
               </div>
@@ -780,6 +828,78 @@ export default function AdminSettings() {
                     </p>
                   )}
                   <span className="ml-auto text-xs text-white/30 block mt-2">Live preview after Save</span>
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* SERVER / KEEPALIVE */}
+          {activeTab === "server" && (
+            <Section title="Server Settings" onSave={() => save("keepAlive")} saving={saving}>
+              <p className="text-sm text-muted-foreground -mt-2 mb-4">
+                Keep your backend server alive by pinging it at regular intervals. Useful for free-tier hosting (e.g., Render) that spins down after inactivity.
+              </p>
+
+              <div className="flex items-center justify-between p-4 bg-muted/40 border border-border mb-6">
+                <div>
+                  <p className="font-medium text-sm flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-accent" />
+                    Server Keepalive Ping
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    When enabled, the admin panel silently pings your backend at the set interval to prevent cold starts.
+                  </p>
+                </div>
+                <Switch
+                  checked={draft.keepAlive?.enabled ?? false}
+                  onCheckedChange={v => updateNested("keepAlive", "enabled", v)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                <Field label="Ping URL">
+                  <Input
+                    value={draft.keepAlive?.pingUrl || ""}
+                    onChange={e => updateNested("keepAlive", "pingUrl", e.target.value)}
+                    className="rounded-none font-mono text-sm"
+                    placeholder="https://your-api.onrender.com/api/healthz"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The URL to ping (GET request). Use your backend&apos;s health check endpoint.
+                  </p>
+                </Field>
+
+                <Field label="Ping Interval (minutes)">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={draft.keepAlive?.intervalMinutes ?? 14}
+                      onChange={e => updateNested("keepAlive", "intervalMinutes", Math.max(1, Math.min(60, Number(e.target.value))))}
+                      className="rounded-none w-28"
+                    />
+                    <span className="text-sm text-muted-foreground">minutes</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Render free plan spins down after 15 min — keep this at 14 or less.
+                  </p>
+                </Field>
+              </div>
+
+              {draft.keepAlive?.enabled && draft.keepAlive?.pingUrl && (
+                <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 text-sm text-green-700 dark:text-green-400 flex items-start gap-2">
+                  <RefreshCw className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    Keepalive active — the admin panel will ping <code className="font-mono text-xs bg-green-500/10 px-1">{draft.keepAlive.pingUrl}</code> every{" "}
+                    <strong>{draft.keepAlive.intervalMinutes ?? 14} minutes</strong> while you are logged in.
+                  </span>
+                </div>
+              )}
+
+              {draft.keepAlive?.enabled && !draft.keepAlive?.pingUrl && (
+                <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-700 dark:text-yellow-400">
+                  Keepalive is on but no Ping URL is set. Please enter your backend health check URL above.
                 </div>
               )}
             </Section>
