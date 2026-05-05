@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+import Fuse from "fuse.js";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingBag, User as UserIcon, Menu, X, Heart, ChevronDown, Zap, Clock } from "lucide-react";
+import { Search, ShoppingBag, User as UserIcon, Menu, X, Heart, ChevronDown, Zap, Clock, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useGetCart, useListCategories } from "@workspace/api-client-react";
+import { useGetCart, useListCategories, useListProducts } from "@workspace/api-client-react";
 import { useGetSettings } from "@/lib/adminApi";
 
 /* ── Countdown hook ── */
@@ -103,6 +104,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [mobileJewelleryOpen, setMobileJewelleryOpen] = useState(false);
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
   const [location] = useLocation();
@@ -111,6 +113,33 @@ export function Navbar() {
   const { data: cart } = useGetCart({ query: { retry: false } });
   const { data: categoriesData } = useListCategories({ query: { staleTime: 60_000 } });
   const { data: siteSettings } = useGetSettings();
+
+  const { data: productsData } = useListProducts(
+    { limit: 200 } as any,
+    { query: { enabled: isSearchOpen, staleTime: 60_000 } }
+  );
+  const allProducts = Array.isArray((productsData as any)?.products) ? (productsData as any).products : [];
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 200);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const fuse = useMemo(() => new Fuse(allProducts, {
+    keys: [
+      { name: "name", weight: 0.65 },
+      { name: "description", weight: 0.2 },
+      { name: "category", weight: 0.15 },
+    ],
+    threshold: 0.4,
+    minMatchCharLength: 2,
+    includeScore: true,
+  }), [allProducts]);
+
+  const suggestions = useMemo(() => {
+    if (!debouncedQuery || debouncedQuery.length < 2) return [];
+    return fuse.search(debouncedQuery).slice(0, 5);
+  }, [fuse, debouncedQuery]);
 
   const siteName = siteSettings?.branding?.siteName || siteSettings?.general?.siteName || "PEARLIS";
   const siteTagline = siteSettings?.branding?.tagline || siteSettings?.general?.tagline || "Fine Jewellery";
@@ -318,33 +347,103 @@ export function Navbar() {
         {isSearchOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[200] bg-black/75 backdrop-blur-sm flex items-start justify-center pt-28 px-4"
-            onClick={() => setIsSearchOpen(false)}>
+            onClick={() => { setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}>
             <motion.div initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -16, opacity: 0 }} transition={{ duration: 0.2 }}
               onClick={e => e.stopPropagation()} className="w-full max-w-2xl bg-white shadow-2xl">
+
+              {/* Input row */}
               <div className="flex items-center border-b border-[#D4AF37]/30 px-5 py-4">
                 <Search className="w-5 h-5 text-[#D4AF37] mr-4 flex-shrink-0" strokeWidth={1.5} />
                 <input autoFocus type="text" placeholder="Search rings, necklaces, pendants..."
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === "Enter" && searchQuery.trim()) window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
-                    if (e.key === "Escape") setIsSearchOpen(false);
+                    if (e.key === "Enter" && searchQuery.trim()) {
+                      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+                      setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery("");
+                    }
+                    if (e.key === "Escape") { setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }
                   }}
                   className="flex-1 outline-none text-base text-[#0F0F0F] placeholder:text-[#0F0F0F]/35 bg-transparent" />
-                <button onClick={() => setIsSearchOpen(false)} className="ml-3 text-[#0F0F0F]/40 hover:text-[#0F0F0F] transition-colors">
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(""); setDebouncedQuery(""); }}
+                    className="mr-2 text-[#0F0F0F]/30 hover:text-[#0F0F0F]/60 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                  className="ml-1 text-[#0F0F0F]/40 hover:text-[#0F0F0F] transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="px-5 py-4">
-                <p className="text-[9px] tracking-[0.25em] uppercase text-[#0F0F0F]/35 mb-3">Browse by Category</p>
-                <div className="flex flex-wrap gap-2">
-                  {jewelleryItems.slice(1).map(item => (
-                    <button key={item.href} onClick={() => { window.location.href = item.href; }}
-                      className="text-[11px] px-3 py-1.5 border border-[#D4AF37]/25 text-[#0F0F0F]/65 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors tracking-wide capitalize">
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
+              {/* Live suggestions */}
+              <AnimatePresence mode="wait">
+                {suggestions.length > 0 ? (
+                  <motion.div key="suggestions"
+                    initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}>
+                    <div className="px-5 pt-3 pb-1">
+                      <p className="text-[9px] tracking-[0.25em] uppercase text-[#0F0F0F]/35">Suggestions</p>
+                    </div>
+                    <ul>
+                      {suggestions.map(({ item: product }) => {
+                        const img = Array.isArray((product as any).images) ? (product as any).images[0] : null;
+                        const price = (product as any).price;
+                        const priceINR = price ? "₹" + Math.round(price * 83).toLocaleString("en-IN") : null;
+                        return (
+                          <li key={(product as any).id}>
+                            <Link href={`/product/${(product as any).id}`}
+                              onClick={() => { setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                              className="flex items-center gap-4 px-5 py-3 hover:bg-[#FAF8F3] transition-colors group border-b border-[#0F0F0F]/5 last:border-0">
+                              {img ? (
+                                <img src={img} alt={(product as any).name}
+                                  className="w-11 h-11 object-cover flex-shrink-0 border border-[#E8E2D9]" />
+                              ) : (
+                                <div className="w-11 h-11 bg-[#F0EBE3] flex-shrink-0 border border-[#E8E2D9]" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-medium text-[#0F0F0F] truncate group-hover:text-[#D4AF37] transition-colors">
+                                  {(product as any).name}
+                                </p>
+                                {priceINR && (
+                                  <p className="text-[11px] text-[#D4AF37] font-semibold mt-0.5">{priceINR}</p>
+                                )}
+                              </div>
+                              <ArrowRight className="w-3.5 h-3.5 text-[#0F0F0F]/20 group-hover:text-[#D4AF37] transition-colors flex-shrink-0" />
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <div className="px-5 py-3 border-t border-[#D4AF37]/15">
+                      <button onClick={() => {
+                        window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+                        setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery("");
+                      }}
+                        className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase font-bold text-[#D4AF37] hover:text-[#c9a430] transition-colors">
+                        <Search className="w-3.5 h-3.5" />
+                        See all results for "{searchQuery}"
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="categories"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="px-5 py-4">
+                    <p className="text-[9px] tracking-[0.25em] uppercase text-[#0F0F0F]/35 mb-3">Browse by Category</p>
+                    <div className="flex flex-wrap gap-2">
+                      {jewelleryItems.slice(1).map(item => (
+                        <button key={item.href} onClick={() => { window.location.href = item.href; setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                          className="text-[11px] px-3 py-1.5 border border-[#D4AF37]/25 text-[#0F0F0F]/65 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors tracking-wide capitalize">
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
             </motion.div>
           </motion.div>
         )}

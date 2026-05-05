@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import Fuse from "fuse.js";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -58,15 +59,31 @@ export default function SearchPage() {
   const maxPriceUSD = priceRange ? priceRange.maxINR / conversionRate : undefined;
 
   const { data: productsData, isLoading, isFetching } = useListProducts({
-    ...(search ? { search } : {}),
     ...(category ? { category } : {}),
     ...(material ? { material } : {}),
     ...(priceRange ? { minPrice: minPriceUSD, maxPrice: maxPriceUSD } : {}),
     sort: sort as any,
-    limit: 100,
-  } as any, { query: { enabled: true } });
+    limit: 200,
+  } as any, { query: { enabled: true, staleTime: 30_000 } });
 
-  const products = Array.isArray(productsData?.products) ? productsData!.products : [];
+  const allProducts = Array.isArray(productsData?.products) ? productsData!.products : [];
+
+  const fuse = useMemo(() => new Fuse(allProducts, {
+    keys: [
+      { name: "name", weight: 0.6 },
+      { name: "description", weight: 0.2 },
+      { name: "category", weight: 0.15 },
+      { name: "material", weight: 0.05 },
+    ],
+    threshold: 0.4,
+    minMatchCharLength: 2,
+    includeScore: true,
+  }), [allProducts]);
+
+  const products = useMemo(() => {
+    if (!search) return allProducts;
+    return fuse.search(search).map(r => r.item);
+  }, [fuse, search, allProducts]);
   const activeFilterCount = [category, material, priceRange].filter(Boolean).length;
   const hasAnyFilter = search || activeFilterCount > 0;
 
