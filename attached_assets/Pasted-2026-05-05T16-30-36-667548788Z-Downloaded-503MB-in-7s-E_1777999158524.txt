@@ -1,0 +1,50 @@
+2026-05-05T16:30:36.667548788Z ==> Downloaded 503MB in 7s. Extraction took 14s.
+2026-05-05T16:30:51.698129738Z info: using existing install for stable-x86_64-unknown-linux-gnu
+2026-05-05T16:30:51.703582829Z 
+2026-05-05T16:30:51.703586879Z info: default toolchain set to stable-x86_64-unknown-linux-gnu
+2026-05-05T16:30:51.714684926Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+2026-05-05T16:30:51.714723118Z 
+2026-05-05T16:30:51.749861351Z ==> Running build command 'npm install -g pnpm && pnpm install && pnpm --filter @workspace/api-server run build'...
+2026-05-05T16:30:51.860305751Z ==> Using Node.js version 24.14.1 (default)
+2026-05-05T16:30:51.884032329Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-05-05T16:30:53.124041076Z 
+2026-05-05T16:30:53.124067017Z changed 1 package in 1s
+2026-05-05T16:30:53.12418589Z 
+2026-05-05T16:30:53.124259012Z 1 package is looking for funding
+2026-05-05T16:30:53.124327934Z   run `npm fund` for details
+2026-05-05T16:30:54.694681464Z 
+2026-05-05T16:30:54.694734906Z > @workspace/api-server@0.0.0 build /opt/render/project/src/artifacts/api-server
+2026-05-05T16:30:54.694741656Z > node ./build.mjs
+2026-05-05T16:30:54.694744256Z 
+2026-05-05T16:30:55.153363113Z ✘ [ERROR] No matching export in "src/lib/mailgun.ts" for import "sendPasswordResetEmail"
+2026-05-05T16:30:55.153385504Z 
+2026-05-05T16:30:55.153389554Z     src/routes/email-auth.ts:8:23:
+2026-05-05T16:30:55.153392454Z       8 │ import { sendOtpEmail, sendPasswordResetEmail } from "../lib/mailgun";
+2026-05-05T16:30:55.153396634Z         ╵                        ~~~~~~~~~~~~~~~~~~~~~~
+2026-05-05T16:30:55.153399124Z 
+2026-05-05T16:30:55.241248008Z 1 error
+2026-05-05T16:30:55.241274329Z 
+2026-05-05T16:30:55.241279179Z   dist/pino-worker.mjs               153.4kb
+2026-05-05T16:30:55.241283229Z   dist/pino-file.mjs                 142.1kb
+2026-05-05T16:30:55.241286659Z   dist/pino-pretty.mjs               114.6kb
+2026-05-05T16:30:55.241290299Z   dist/thread-stream-worker.mjs        7.3kb
+2026-05-05T16:30:55.24129392Z   dist/pino-worker.mjs.map           256.9kb
+2026-05-05T16:30:55.2412975Z   dist/pino-file.mjs.map             229.0kb
+2026-05-05T16:30:55.24130115Z   dist/pino-pretty.mjs.map           203.9kb
+2026-05-05T16:30:55.24130476Z   dist/thread-stream-worker.mjs.map   12.0kb
+2026-05-05T16:30:55.24130803Z 
+2026-05-05T16:30:55.24131251Z ⚡ Done in 491ms
+2026-05-05T16:30:55.243132861Z Error: Build failed with 1 error:
+2026-05-05T16:30:55.243141911Z src/routes/email-auth.ts:8:23: ERROR: No matching export in "src/lib/mailgun.ts" for import "sendPasswordResetEmail"
+2026-05-05T16:30:55.243144721Z     at failureErrorWithLog (/opt/render/project/src/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1467:15)
+2026-05-05T16:30:55.243147901Z     at /opt/render/project/src/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:926:25
+2026-05-05T16:30:55.243150781Z     at /opt/render/project/src/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1345:9
+2026-05-05T16:30:55.243154261Z     at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+2026-05-05T16:30:55.243166342Z   errors: [Getter/Setter],
+2026-05-05T16:30:55.243169471Z   warnings: [Getter/Setter]
+2026-05-05T16:30:55.243172402Z }
+2026-05-05T16:30:55.264957965Z /opt/render/project/src/artifacts/api-server:
+2026-05-05T16:30:55.264980506Z  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 build: `node ./build.mjs`
+2026-05-05T16:30:55.264985906Z Exit status 1
+2026-05-05T16:30:55.316830603Z ==> Build failed 😞
+2026-05-05T16:30:55.316851713Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys

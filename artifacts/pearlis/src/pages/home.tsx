@@ -10,6 +10,7 @@ import { ProductCard } from "@/components/ui/ProductCard";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
+import { load as loadRecentlyViewed, type RecentProduct } from "@/hooks/useRecentlyViewed";
 import {
   ArrowRight, Star, Shield, Truck, RefreshCcw, Award, Gem,
   Clock, Instagram, Play, ChevronLeft, ChevronRight, ExternalLink,
@@ -527,6 +528,8 @@ export default function Home() {
   const { data: arrivals } = useGetNewArrivals();
   const { data: blogsData } = useListBlogs();
   const { data: settings } = useGetSettings();
+  const [homeRecentlyViewed, setHomeRecentlyViewed] = useState<RecentProduct[]>([]);
+  useEffect(() => { setHomeRecentlyViewed(loadRecentlyViewed()); }, []);
   const hs = settings?.homeSale as any;
   const saleEndMs = hs?.endsAt ? new Date(hs.endsAt).getTime() : 0;
   const { h, m, s, expired } = useCountdown(saleEndMs);
@@ -672,7 +675,46 @@ export default function Home() {
         </section>
       )}
 
-      {/* ── 7. HOMEPAGE SALE SECTION ── */}
+      {/* ── 7. RECENTLY VIEWED ── */}
+      {homeRecentlyViewed.length > 0 && (
+        <section className="py-16 md:py-20 bg-[#FAF8F3]">
+          <div className="max-w-[1440px] mx-auto px-4 md:px-8">
+            <motion.div {...fadeUp()} className="flex items-end justify-between mb-10 md:mb-12">
+              <div>
+                <p className="text-[10px] tracking-[0.35em] uppercase text-[#D4AF37] font-bold mb-2">Your Journey</p>
+                <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl text-[#0F0F0F]">Recently Viewed</h2>
+              </div>
+            </motion.div>
+            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
+              {homeRecentlyViewed.slice(0, 10).map((p, i) => {
+                const img = p.images?.[0] || "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=85&w=900";
+                const price = Math.round(p.price * 83);
+                const discPrice = p.discountPrice ? Math.round(p.discountPrice * 83) : null;
+                return (
+                  <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: i * 0.06 }} className="flex-shrink-0 w-40 sm:w-52 md:w-60 snap-start group">
+                    <Link href={`/product/${p.id}`}>
+                      <div className="relative overflow-hidden bg-[#F0EDE6] rounded-2xl" style={{ aspectRatio: "3/4" }}>
+                        <img src={img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      </div>
+                      <div className="pt-3">
+                        {p.category && <p className="text-[8px] tracking-[0.2em] uppercase text-[#D4AF37] font-semibold mb-1">{p.category}</p>}
+                        <p className="font-serif text-sm sm:text-base text-[#0F0F0F] leading-snug line-clamp-2 mb-1.5">{p.name}</p>
+                        <div className="flex items-center gap-2">
+                          {discPrice
+                            ? <><span className="text-sm font-semibold text-[#0F0F0F]">₹{discPrice.toLocaleString("en-IN")}</span><span className="text-xs text-[#0F0F0F]/30 line-through">₹{price.toLocaleString("en-IN")}</span></>
+                            : <span className="text-sm font-semibold text-[#0F0F0F]">₹{price.toLocaleString("en-IN")}</span>}
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── 8. HOMEPAGE SALE SECTION ── */}
       {showHomeSale && (
         <section className="relative overflow-hidden bg-[#0A0A0A]">
           <div className="absolute inset-0 pointer-events-none">

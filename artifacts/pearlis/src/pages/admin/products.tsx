@@ -566,12 +566,15 @@ export default function AdminProducts() {
                       </div>
                     </F>
 
-                    <F label="Product Video">
+                    <F label="Craftsmanship Story Video">
                       <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground bg-muted/40 border border-border px-3 py-2 rounded">
+                          This video appears as <strong>"Watch the Story / Behind the Craft"</strong> on the product page. The section stays <strong>hidden</strong> until a video is uploaded or a URL is added.
+                        </p>
                         <div className="flex gap-2 items-center">
                           <Video className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                           <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} className="rounded-none flex-1"
-                            placeholder="https://www.youtube.com/embed/... or upload below" />
+                            placeholder="https://www.youtube.com/embed/... or upload a video file below" />
                           {form.videoUrl && <Button variant="ghost" size="icon" className="rounded-none h-10 w-10 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={() => set("videoUrl", "")}><X className="w-4 h-4" /></Button>}
                         </div>
                         <div className="border-2 border-dashed border-border p-6 text-center cursor-pointer hover:border-accent transition-colors"
@@ -593,10 +596,21 @@ export default function AdminProducts() {
                             </>
                           )}
                         </div>
-                        {form.videoUrl?.startsWith("/api/uploads/") && (
+                        {form.videoUrl && (
                           <div className="border border-border p-2 bg-muted/30">
-                            <video src={form.videoUrl} controls className="w-full max-h-40" />
+                            {form.videoUrl.startsWith("/api/uploads/") ? (
+                              <video src={form.videoUrl} controls className="w-full max-h-40" />
+                            ) : (
+                              <p className="text-xs text-muted-foreground px-1 py-0.5 truncate">
+                                <span className="text-green-600 font-medium">✓ Video URL set:</span> {form.videoUrl}
+                              </p>
+                            )}
                           </div>
+                        )}
+                        {!form.videoUrl && (
+                          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded">
+                            No video added — the "Watch the Story" section will be hidden on this product's page.
+                          </p>
                         )}
                       </div>
                     </F>

@@ -6,6 +6,7 @@ import { Search, ShoppingBag, User as UserIcon, Menu, X, Heart, ChevronDown, Zap
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetCart, useListCategories, useListProducts } from "@workspace/api-client-react";
 import { useGetSettings } from "@/lib/adminApi";
+import { load as loadRecentlyViewed, type RecentProduct } from "@/hooks/useRecentlyViewed";
 
 /* ── Countdown hook ── */
 function useCountdown(endsAt: string | undefined) {
@@ -107,6 +108,7 @@ export function Navbar() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [mobileJewelleryOpen, setMobileJewelleryOpen] = useState(false);
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
+  const [navRecentlyViewed, setNavRecentlyViewed] = useState<RecentProduct[]>([]);
   const [location] = useLocation();
   const { user } = useAuth();
 
@@ -124,6 +126,10 @@ export function Navbar() {
     const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 200);
     return () => clearTimeout(t);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (isSearchOpen) setNavRecentlyViewed(loadRecentlyViewed());
+  }, [isSearchOpen]);
 
   const fuse = useMemo(() => new Fuse(allProducts, {
     keys: [
@@ -430,15 +436,46 @@ export function Navbar() {
                   <motion.div key="categories"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="px-5 py-4">
-                    <p className="text-[9px] tracking-[0.25em] uppercase text-[#0F0F0F]/35 mb-3">Browse by Category</p>
-                    <div className="flex flex-wrap gap-2">
-                      {jewelleryItems.slice(1).map(item => (
-                        <button key={item.href} onClick={() => { window.location.href = item.href; setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
-                          className="text-[11px] px-3 py-1.5 border border-[#D4AF37]/25 text-[#0F0F0F]/65 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors tracking-wide capitalize">
-                          {item.label}
-                        </button>
-                      ))}
+                    className="px-5 py-4 space-y-4">
+
+                    {/* Recently Viewed */}
+                    {navRecentlyViewed.length > 0 && (
+                      <div>
+                        <p className="text-[9px] tracking-[0.25em] uppercase text-[#0F0F0F]/35 mb-3">Recently Viewed</p>
+                        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                          {navRecentlyViewed.slice(0, 6).map(p => {
+                            const img = p.images?.[0];
+                            const priceINR = p.price ? Math.round(p.price * 83) : null;
+                            return (
+                              <Link key={p.id} href={`/product/${p.id}`}
+                                onClick={() => { setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                                className="flex-shrink-0 group flex flex-col gap-1.5 w-[72px]">
+                                <div className="w-[72px] h-[72px] bg-[#F0EBE3] border border-[#E8E2D9] overflow-hidden rounded">
+                                  {img
+                                    ? <img src={img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    : <div className="w-full h-full bg-[#E8E2D9]" />}
+                                </div>
+                                <p className="text-[10px] text-[#0F0F0F]/70 group-hover:text-[#D4AF37] transition-colors line-clamp-2 leading-tight">{p.name}</p>
+                                {priceINR && <p className="text-[10px] font-semibold text-[#D4AF37]">₹{priceINR.toLocaleString("en-IN")}</p>}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                        <div className="h-px bg-[#D4AF37]/10 mt-4" />
+                      </div>
+                    )}
+
+                    {/* Browse by Category */}
+                    <div>
+                      <p className="text-[9px] tracking-[0.25em] uppercase text-[#0F0F0F]/35 mb-3">Browse by Category</p>
+                      <div className="flex flex-wrap gap-2">
+                        {jewelleryItems.slice(1).map(item => (
+                          <button key={item.href} onClick={() => { window.location.href = item.href; setIsSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                            className="text-[11px] px-3 py-1.5 border border-[#D4AF37]/25 text-[#0F0F0F]/65 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors tracking-wide capitalize">
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}

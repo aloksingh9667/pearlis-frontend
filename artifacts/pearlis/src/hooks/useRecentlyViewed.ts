@@ -12,7 +12,7 @@ export interface RecentProduct {
   category?: string | null;
 }
 
-function load(): RecentProduct[] {
+export function load(): RecentProduct[] {
   try {
     return JSON.parse(localStorage.getItem(KEY) || "[]");
   } catch {
