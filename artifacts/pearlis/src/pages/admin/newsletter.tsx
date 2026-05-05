@@ -151,13 +151,14 @@ export default function AdminNewsletter() {
             </p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead>#</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Subscribed</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="whitespace-nowrap">#</TableHead>
+                <TableHead className="whitespace-nowrap">Email</TableHead>
+                <TableHead className="whitespace-nowrap">Subscribed</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -196,6 +197,7 @@ export default function AdminNewsletter() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
     </AdminLayout>

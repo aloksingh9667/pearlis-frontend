@@ -165,16 +165,17 @@ export default function AdminCoupons() {
             <p className="text-muted-foreground/60 text-xs mt-1">Click "Create Coupon" to add your first discount code.</p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead>Code</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead>Min Order</TableHead>
-                <TableHead>Uses</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="whitespace-nowrap">Code</TableHead>
+                <TableHead className="whitespace-nowrap">Discount</TableHead>
+                <TableHead className="whitespace-nowrap">Min Order</TableHead>
+                <TableHead className="whitespace-nowrap">Uses</TableHead>
+                <TableHead className="whitespace-nowrap">Expires</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -233,6 +234,7 @@ export default function AdminCoupons() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
 

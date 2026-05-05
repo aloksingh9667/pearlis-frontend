@@ -7,7 +7,7 @@ import {
 } from "@workspace/api-client-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Heart, ShoppingBag, X, ArrowRight } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -18,8 +18,14 @@ import { motion, AnimatePresence } from "framer-motion";
 const INR = (n: number) => "₹" + Math.round(n * 83).toLocaleString("en-IN");
 
 export default function Wishlist() {
-  const { user } = useAuth();
-  const { data: wishlist, isLoading } = useGetWishlist();
+  const { user, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const { data: wishlist, isLoading } = useGetWishlist({ query: { enabled: !!user } });
+
+  if (!authLoading && !user) {
+    setLocation("/sign-in?redirect=/wishlist");
+    return null;
+  }
   const removeFromWishlist = useRemoveFromWishlist();
   const addToCart = useAddToCart();
   const queryClient = useQueryClient();

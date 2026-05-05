@@ -234,17 +234,18 @@ export default function AdminProducts() {
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="w-16">Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price (INR)</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Badges</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="whitespace-nowrap">Name</TableHead>
+                <TableHead className="whitespace-nowrap">Category</TableHead>
+                <TableHead className="whitespace-nowrap">Price (INR)</TableHead>
+                <TableHead className="whitespace-nowrap">Discount</TableHead>
+                <TableHead className="whitespace-nowrap">Stock</TableHead>
+                <TableHead className="whitespace-nowrap">Badges</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -254,9 +255,9 @@ export default function AdminProducts() {
                     <img src={p.images[0]} alt="" className="w-10 h-10 object-cover bg-muted" onError={e => { (e.target as HTMLImageElement).src = "https://placehold.co/40x40?text=No+Img"; }} />
                   </TableCell>
                   <TableCell className="font-medium max-w-[180px] truncate">{p.name}</TableCell>
-                  <TableCell className="capitalize text-muted-foreground text-sm">{p.category}</TableCell>
-                  <TableCell className="text-sm font-medium">{fmt(toINR(p.price))}</TableCell>
-                  <TableCell className="text-sm">{p.discountPrice ? <span className="text-accent">{fmt(toINR(p.discountPrice))}</span> : <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="capitalize text-muted-foreground text-sm whitespace-nowrap">{p.category}</TableCell>
+                  <TableCell className="text-sm font-medium whitespace-nowrap">{fmt(toINR(p.price))}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{p.discountPrice ? <span className="text-accent">{fmt(toINR(p.discountPrice))}</span> : <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell><span className={`text-xs px-2 py-1 ${p.stock > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>{p.stock}</span></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -275,6 +276,7 @@ export default function AdminProducts() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
 

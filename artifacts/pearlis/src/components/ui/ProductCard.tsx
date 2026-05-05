@@ -1,9 +1,10 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Product, useAddToCart, useAddToWishlist, useRemoveFromWishlist, useGetWishlist, getGetCartQueryKey } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
 import { Heart, Star, ShoppingBag, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductCardProps {
   product: Product;
@@ -18,10 +19,12 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
   const discountPct = hasDiscount
     ? Math.round(((product.price - product.discountPrice!) / product.price) * 100)
     : 0;
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const addToCart = useAddToCart();
   const addToWishlist = useAddToWishlist();
   const removeFromWishlist = useRemoveFromWishlist();
-  const { data: wishlist } = useGetWishlist();
+  const { data: wishlist } = useGetWishlist({ query: { enabled: !!user } });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -45,6 +48,10 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      setLocation(`/sign-in?redirect=/product/${product.id}`);
+      return;
+    }
     if (isWishlisted) {
       removeFromWishlist.mutate({ productId: product.id }, {
         onSuccess: () => toast({ title: "Removed from wishlist" }),

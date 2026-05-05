@@ -77,6 +77,7 @@ export default function AdminUsers() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">No users found.</div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
@@ -138,6 +139,7 @@ export default function AdminUsers() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
     </AdminLayout>

@@ -253,6 +253,12 @@ export default function Checkout() {
     }
   }, [cart, cartLoading, setLocation]);
 
+  useEffect(() => {
+    if (!cartLoading && !user) {
+      setLocation("/sign-in?redirect=/checkout");
+    }
+  }, [user, cartLoading, setLocation]);
+
   if (cartLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

@@ -30,9 +30,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function Orders() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
   const { data, isLoading } = useListOrders({ limit: 50 });
   const [, setLocation] = useLocation();
+
+  if (!authLoading && !user) {
+    setLocation("/sign-in?redirect=/orders");
+    return null;
+  }
 
   const tabs = [
     { label: "Order History", href: "/orders", active: true },

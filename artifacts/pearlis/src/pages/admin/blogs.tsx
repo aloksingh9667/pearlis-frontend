@@ -90,14 +90,15 @@ export default function AdminBlogs() {
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="w-16">Cover</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Author</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="whitespace-nowrap">Title</TableHead>
+                <TableHead className="whitespace-nowrap">Author</TableHead>
+                <TableHead className="whitespace-nowrap">Date</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -107,8 +108,8 @@ export default function AdminBlogs() {
                     <img src={blog.imageUrl} alt="" className="w-10 h-10 object-cover bg-muted" onError={e => { (e.target as HTMLImageElement).src = "https://placehold.co/40x40?text=?"; }} />
                   </TableCell>
                   <TableCell className="font-medium truncate max-w-[240px]">{blog.title}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{blog.author}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{format(new Date(blog.createdAt), "MMM d, yyyy")}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{blog.author}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{format(new Date(blog.createdAt), "MMM d, yyyy")}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" className="rounded-none h-8 w-8" onClick={() => openEdit(blog)}><Edit className="w-4 h-4" /></Button>
@@ -119,6 +120,7 @@ export default function AdminBlogs() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
 

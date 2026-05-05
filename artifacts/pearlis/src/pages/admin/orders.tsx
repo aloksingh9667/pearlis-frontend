@@ -49,23 +49,24 @@ export default function AdminOrders() {
         ) : !data?.orders?.length ? (
           <div className="py-16 text-center text-muted-foreground font-serif text-xl">No orders yet</div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead>Order ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total (INR)</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="whitespace-nowrap">Order ID</TableHead>
+                <TableHead className="whitespace-nowrap">Date</TableHead>
+                <TableHead className="whitespace-nowrap">Customer</TableHead>
+                <TableHead className="whitespace-nowrap">Items</TableHead>
+                <TableHead className="whitespace-nowrap">Total (INR)</TableHead>
+                <TableHead className="whitespace-nowrap">Payment</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data?.orders.map((order: any) => (
                 <TableRow key={order.id} className="border-border">
-                  <TableCell className="font-mono font-medium text-sm">#{order.id.toString().padStart(6, "0")}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{format(new Date(order.createdAt), "MMM d, yyyy")}</TableCell>
+                  <TableCell className="font-mono font-medium text-sm whitespace-nowrap">#{order.id.toString().padStart(6, "0")}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{format(new Date(order.createdAt), "MMM d, yyyy")}</TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{order.customerName || "Guest"}</p>
@@ -73,7 +74,7 @@ export default function AdminOrders() {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{order.items?.length || "—"}</TableCell>
-                  <TableCell className="font-semibold text-sm">{fmt(order.total)}</TableCell>
+                  <TableCell className="font-semibold text-sm whitespace-nowrap">{fmt(order.total)}</TableCell>
                   <TableCell>
                     <span className="text-xs uppercase tracking-widest text-muted-foreground">{order.paymentMethod || "—"}</span>
                   </TableCell>
@@ -93,6 +94,7 @@ export default function AdminOrders() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
     </AdminLayout>
