@@ -119,9 +119,9 @@ export default function AdminCoupons() {
 
   return (
     <AdminLayout>
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
         <div>
-          <h1 className="font-serif text-3xl">Coupons</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl">Coupons</h1>
           <p className="text-muted-foreground text-sm mt-1">Create discount codes for customers to use at checkout.</p>
         </div>
         <Button className="rounded-none uppercase tracking-widest text-xs gap-2" onClick={() => { setForm(emptyForm); setShowModal(true); }}>
@@ -141,7 +141,7 @@ export default function AdminCoupons() {
 
       {/* Stats */}
       {!isLoading && (coupons || []).length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: "Total Coupons", value: (coupons || []).length },
             { label: "Active", value: activeCoupons.length },
