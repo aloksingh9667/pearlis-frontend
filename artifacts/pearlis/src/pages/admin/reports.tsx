@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Loader2, TrendingUp, TrendingDown, IndianRupee, Package, Users, ShoppingBag, Download } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, IndianRupee, Package, Users, ShoppingBag, Download, Tag, Percent, BadgePercent } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -107,7 +107,9 @@ export default function AdminReports() {
   const statusData = (report?.statusBreakdown || []).map((s: any) => ({
     name: s.status, value: s.count, color: STATUS_COLORS[s.status] || "#6b7280",
   }));
-  const topProducts = report?.topProducts || [];
+  const topProducts   = report?.topProducts   || [];
+  const couponStats   = report?.couponStats   || [];
+  const couponSummary = report?.couponSummary || { totalCouponOrders: 0, totalDiscountGiven: 0 };
 
   return (
     <AdminLayout>
@@ -310,7 +312,7 @@ export default function AdminReports() {
           </div>
 
           {/* ── Full Timeline Table ── */}
-          <div className="bg-card border border-border">
+          <div className="bg-card border border-border mb-6">
             <div className="px-6 pt-5 pb-4 border-b border-border">
               <p className="text-[10px] tracking-[0.25em] uppercase font-bold text-muted-foreground">Full Timeline Data</p>
             </div>
@@ -349,6 +351,134 @@ export default function AdminReports() {
                 </tfoot>
               </table>
             </div>
+          </div>
+
+          {/* ── Coupon Performance ── */}
+          <div className="mb-2">
+            <p className="text-[10px] tracking-[0.25em] uppercase font-bold text-muted-foreground mb-4 flex items-center gap-2">
+              <Tag className="w-3.5 h-3.5" /> Coupon Performance
+            </p>
+
+            {/* Summary mini-cards */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-card border border-border p-4">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Coupons Used</p>
+                <p className="font-serif text-2xl font-bold">{couponStats.length}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">unique codes</p>
+              </div>
+              <div className="bg-card border border-border p-4">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Coupon Orders</p>
+                <p className="font-serif text-2xl font-bold">{couponSummary.totalCouponOrders}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {summary.totalOrders > 0
+                    ? `${Math.round((couponSummary.totalCouponOrders / summary.totalOrders) * 100)}% of all orders`
+                    : "of all orders"}
+                </p>
+              </div>
+              <div className="bg-card border border-border p-4">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Total Discount Given</p>
+                <p className="font-serif text-2xl font-bold text-red-500">{INR(couponSummary.totalDiscountGiven)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">across all coupon orders</p>
+              </div>
+            </div>
+
+            {couponStats.length === 0 ? (
+              <div className="bg-card border border-border flex items-center justify-center h-32 text-muted-foreground text-sm">
+                No coupons were used in this period.
+              </div>
+            ) : (
+              <>
+                {/* Bar chart — usage count per coupon */}
+                <div className="bg-card border border-border p-6 mb-6">
+                  <p className="text-[10px] tracking-[0.25em] uppercase font-bold text-muted-foreground mb-5">Usage Count per Coupon</p>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart
+                      data={couponStats.slice(0, 10)}
+                      margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="code" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0].payload;
+                          return (
+                            <div className="bg-card border border-border px-3 py-2.5 text-xs shadow-lg space-y-1 min-w-[160px]">
+                              <p className="font-bold text-accent">{label}</p>
+                              <div className="flex justify-between gap-4"><span className="text-muted-foreground">Uses</span><span className="font-semibold">{d.uses}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-muted-foreground">Discount Given</span><span className="font-semibold text-red-500">{INR(d.totalDiscount)}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-muted-foreground">Revenue After</span><span className="font-semibold text-green-600">{INR(d.revenueAfter)}</span></div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="uses" name="Uses" fill="#D4AF37" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Detailed table */}
+                <div className="bg-card border border-border">
+                  <div className="px-6 pt-5 pb-4 border-b border-border">
+                    <p className="text-[10px] tracking-[0.25em] uppercase font-bold text-muted-foreground">Coupon Breakdown</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left px-6 py-3 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Code</th>
+                          <th className="text-left px-6 py-3 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Type</th>
+                          <th className="text-right px-6 py-3 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Uses</th>
+                          <th className="text-right px-6 py-3 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Revenue Before</th>
+                          <th className="text-right px-6 py-3 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Discount Given</th>
+                          <th className="text-right px-6 py-3 text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Revenue After</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {couponStats.map((c: any) => (
+                          <tr key={c.code} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                            <td className="px-6 py-3">
+                              <span className="font-mono font-bold text-accent tracking-wider text-xs bg-accent/10 px-2 py-0.5 rounded">
+                                {c.code}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3 text-muted-foreground">
+                              {c.discountType === "percentage" ? (
+                                <span className="inline-flex items-center gap-1 text-xs">
+                                  <Percent className="w-3 h-3" />{c.discountValue}% off
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs">
+                                  <BadgePercent className="w-3 h-3" />{INR(c.discountValue * 83)} flat
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-3 text-right font-semibold">{c.uses}</td>
+                            <td className="px-6 py-3 text-right text-muted-foreground">{INR(c.revenueBefore)}</td>
+                            <td className="px-6 py-3 text-right text-red-500 font-medium">−{INR(c.totalDiscount)}</td>
+                            <td className="px-6 py-3 text-right text-green-600 font-semibold">{INR(c.revenueAfter)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/30 font-semibold">
+                          <td className="px-6 py-3 text-[10px] uppercase tracking-widest" colSpan={2}>Total</td>
+                          <td className="px-6 py-3 text-right">{couponSummary.totalCouponOrders}</td>
+                          <td className="px-6 py-3 text-right text-muted-foreground">
+                            {INR(couponStats.reduce((s: number, c: any) => s + c.revenueBefore, 0))}
+                          </td>
+                          <td className="px-6 py-3 text-right text-red-500">−{INR(couponSummary.totalDiscountGiven)}</td>
+                          <td className="px-6 py-3 text-right text-green-600">
+                            {INR(couponStats.reduce((s: number, c: any) => s + c.revenueAfter, 0))}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
