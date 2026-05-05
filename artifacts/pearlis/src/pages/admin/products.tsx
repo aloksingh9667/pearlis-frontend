@@ -306,7 +306,7 @@ export default function AdminProducts() {
                 ))}
               </div>
 
-              <div className="p-6 space-y-5 max-h-[65vh] overflow-y-auto">
+              <div className="p-6 space-y-5 max-h-[78vh] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
 
                 {/* ── Basic Info ── */}
                 {activeTab === "Basic Info" && (
