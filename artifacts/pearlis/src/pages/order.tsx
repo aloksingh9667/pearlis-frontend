@@ -3,9 +3,10 @@ import { useGetOrder } from "@workspace/api-client-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { format } from "date-fns";
-import { Loader2, CheckCircle2, Circle, Package, Truck, Star, ArrowLeft, Printer, MapPin, CreditCard, Phone, Mail } from "lucide-react";
-import { motion } from "framer-motion";
-import { useRef } from "react";
+import { Loader2, CheckCircle2, Circle, Package, Truck, Star, ArrowLeft, Printer, MapPin, CreditCard, Phone, Mail, RotateCcw, AlertCircle, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState } from "react";
+import { apiUrl } from "@/lib/apiUrl";
 
 /* ── Price helpers ── */
 const INR_RATE = 83;
@@ -31,6 +32,15 @@ const STATUS_COLOR: Record<string, string> = {
   delivered: "bg-green-50 text-green-700 border-green-200",
   cancelled: "bg-red-50 text-red-700 border-red-200",
 };
+
+const RETURN_REASONS = [
+  "Defective / damaged product",
+  "Wrong item received",
+  "Size or fit issue",
+  "Product not as described",
+  "Changed my mind",
+  "Other",
+];
 
 function OrderStepper({ status }: { status: string }) {
   const activeIdx = STATUS_ORDER[status] ?? 0;
@@ -88,6 +98,38 @@ export default function OrderDetail() {
   const { data: order, isLoading } = useGetOrder(orderId, {
     query: { enabled: !!orderId, refetchInterval: 30_000 },
   });
+
+  /* ── Return Request state ── */
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnDescription, setReturnDescription] = useState("");
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [returnSubmitted, setReturnSubmitted] = useState(false);
+  const [returnError, setReturnError] = useState("");
+
+  async function handleSubmitReturn() {
+    if (!returnReason) { setReturnError("Please select a reason."); return; }
+    setReturnSubmitting(true);
+    setReturnError("");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(apiUrl(`/api/orders/${orderId}/return-request`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ reason: returnReason, description: returnDescription }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit");
+      setReturnSubmitted(true);
+    } catch (err: any) {
+      setReturnError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setReturnSubmitting(false);
+    }
+  }
 
   function handlePrint() {
     const content = printRef.current;
@@ -173,6 +215,38 @@ export default function OrderDetail() {
             <p className="text-[9px] tracking-[0.3em] uppercase text-[#D4AF37] font-bold mb-6">Tracking Status</p>
             <OrderStepper status={order.status} />
           </motion.div>
+
+          {/* ── Return / Refund Request (only for delivered orders) ── */}
+          {order.status === "delivered" && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }}
+              className="mb-6">
+              {returnSubmitted ? (
+                <div className="bg-green-50 border border-green-200 p-5 flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-green-800 font-semibold text-sm">Return Request Submitted</p>
+                    <p className="text-green-700 text-xs mt-0.5">We've received your request and will get back to you within 2-3 business days. Eligible refunds are processed within 7-10 business days.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white border border-[#D4AF37]/15 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <RotateCcw className="w-4 h-4 text-[#D4AF37] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#0F0F0F]">Need to return this order?</p>
+                      <p className="text-[11px] text-[#0F0F0F]/50 mt-0.5">Returns accepted within 7 days of delivery for eligible items.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowReturnModal(true)}
+                    className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#D4AF37] border border-[#D4AF37]/50 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 px-5 py-2.5 transition-all whitespace-nowrap flex-shrink-0"
+                  >
+                    Request Return / Refund
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -289,6 +363,117 @@ export default function OrderDetail() {
           </div>
         </div>
       </div>
+
+      {/* ── Return Request Modal ── */}
+      <AnimatePresence>
+        {showReturnModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={() => { setShowReturnModal(false); setReturnError(""); }}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-[#FAF8F3] w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[#D4AF37]/15">
+                <div>
+                  <h2 className="font-serif text-xl text-[#0F0F0F]">Request Return / Refund</h2>
+                  <p className="text-[10px] tracking-[0.2em] uppercase text-[#D4AF37] mt-0.5">Order #{invoiceNo}</p>
+                </div>
+                <button
+                  onClick={() => { setShowReturnModal(false); setReturnError(""); }}
+                  className="p-2 hover:bg-[#D4AF37]/10 transition-colors rounded-sm"
+                >
+                  <X className="w-5 h-5 text-[#0F0F0F]/50" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                {/* Return Policy */}
+                <div className="bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 space-y-1.5">
+                  <p className="font-semibold tracking-wide uppercase text-[10px] text-amber-600 mb-2">Return Policy</p>
+                  <p>• Returns accepted within <strong>7 days</strong> of delivery.</p>
+                  <p>• Items must be unused, unworn, and in original packaging.</p>
+                  <p>• Custom or engraved pieces are <strong>non-refundable</strong>.</p>
+                  <p>• Approved refunds processed within <strong>7–10 business days</strong>.</p>
+                  <p>• Original shipping charges are non-refundable.</p>
+                </div>
+
+                {/* Reason */}
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest text-[#0F0F0F]/50 font-semibold">
+                    Reason for Return *
+                  </label>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {RETURN_REASONS.map(reason => (
+                      <button
+                        key={reason}
+                        type="button"
+                        onClick={() => setReturnReason(reason)}
+                        className={`text-left px-4 py-2.5 text-sm border transition-all ${
+                          returnReason === reason
+                            ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#0F0F0F] font-medium"
+                            : "border-[#D4AF37]/20 text-[#0F0F0F]/60 hover:border-[#D4AF37]/40 hover:text-[#0F0F0F]"
+                        }`}
+                      >
+                        {reason}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest text-[#0F0F0F]/50 font-semibold">
+                    Additional Details <span className="text-[#0F0F0F]/30 normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={returnDescription}
+                    onChange={e => setReturnDescription(e.target.value)}
+                    placeholder="Describe the issue in more detail…"
+                    className="w-full border border-[#D4AF37]/20 bg-white px-4 py-3 text-sm text-[#0F0F0F] placeholder-[#0F0F0F]/30 resize-none focus:outline-none focus:border-[#D4AF37]/60 transition-colors"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Error */}
+                {returnError && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 px-4 py-3">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {returnError}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => { setShowReturnModal(false); setReturnError(""); }}
+                    className="flex-1 py-3 text-[10px] tracking-[0.2em] uppercase font-bold text-[#0F0F0F]/50 border border-[#0F0F0F]/15 hover:border-[#0F0F0F]/30 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitReturn}
+                    disabled={returnSubmitting || !returnReason}
+                    className="flex-1 py-3 text-[10px] tracking-[0.2em] uppercase font-bold text-white bg-[#D4AF37] hover:bg-[#b8960f] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  >
+                    {returnSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                    Submit Request
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Hidden printable invoice ── */}
       <div className="hidden">
