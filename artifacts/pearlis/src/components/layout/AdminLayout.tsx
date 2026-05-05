@@ -46,6 +46,31 @@ const NAV_GROUPS = [
   },
 ];
 
+function useKeepAlive() {
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    async function init() {
+      try {
+        const res = await fetch(apiUrl("/api/settings/keepAlive"));
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const cfg = data?.value ?? data;
+        if (!cfg?.enabled || !cfg?.pingUrl) return;
+        const ms = Math.max(1, cfg.intervalMinutes ?? 14) * 60 * 1000;
+        const ping = () => { fetch(cfg.pingUrl, { mode: "no-cors" }).catch(() => {}); };
+        ping();
+        intervalRef.current = setInterval(ping, ms);
+      } catch {}
+    }
+    init();
+    return () => {
+      cancelled = true;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+}
+
 function useOrderBadge() {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -69,6 +94,7 @@ function useOrderBadge() {
 }
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
+  useKeepAlive();
   const pendingOrders = useOrderBadge();
   const [location] = useLocation();
   const { logout, user } = useAuth();

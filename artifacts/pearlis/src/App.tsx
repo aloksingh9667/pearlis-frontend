@@ -6,34 +6,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { BrandingApplicator } from "@/components/layout/BrandingApplicator";
 import { Loader2 } from "lucide-react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { useEffect, useRef } from "react";
-import { apiUrl } from "@/lib/apiUrl";
-
-function useKeepAlive() {
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    async function init() {
-      try {
-        const res = await fetch(apiUrl("/api/settings/keepAlive"));
-        if (!res.ok || cancelled) return;
-        const data = await res.json();
-        const cfg = data?.value ?? data;
-        if (!cfg?.enabled || !cfg?.pingUrl) return;
-        const ms = Math.max(1, cfg.intervalMinutes ?? 14) * 60 * 1000;
-        const ping = () => { fetch(cfg.pingUrl, { mode: "no-cors" }).catch(() => {}); };
-        ping();
-        intervalRef.current = setInterval(ping, ms);
-      } catch {}
-    }
-    init();
-    return () => {
-      cancelled = true;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-}
-
 // Pages
 import Home from "@/pages/home";
 import Shop from "@/pages/shop";
@@ -155,17 +127,11 @@ function Router() {
   );
 }
 
-function KeepAliveRunner() {
-  useKeepAlive();
-  return null;
-}
-
 function AppWithProviders() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <KeepAliveRunner />
           <BrandingApplicator />
           <Router />
           <Toaster />

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGetSettings, useUpdateSetting, type SiteSettings, type PriceRange, type RingRow, type BraceletRow, type NecklaceRow } from "@/lib/adminApi";
 import { useListCategories } from "@workspace/api-client-react";
@@ -853,76 +853,149 @@ export default function AdminSettings() {
             </Section>
           )}
 
-          {/* SERVER / KEEPALIVE */}
+          {/* SERVER / KEEPALIVE + LOW STOCK */}
           {activeTab === "server" && (
-            <Section title="Server Settings" onSave={() => save("keepAlive")} saving={saving}>
-              <p className="text-sm text-muted-foreground -mt-2 mb-4">
-                Keep your backend server alive by pinging it at regular intervals. Useful for free-tier hosting (e.g., Render) that spins down after inactivity.
-              </p>
+            <div className="space-y-10">
+              <Section title="Server Keepalive" onSave={() => save("keepAlive")} saving={saving}>
+                <p className="text-sm text-muted-foreground -mt-2 mb-4">
+                  Keep your backend server alive by pinging it at regular intervals. Useful for free-tier hosting (e.g., Render) that spins down after inactivity.
+                  <strong className="text-foreground"> The ping only runs while you are logged in as admin.</strong>
+                </p>
 
-              <div className="flex items-center justify-between p-4 bg-muted/40 border border-border mb-6">
-                <div>
-                  <p className="font-medium text-sm flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 text-accent" />
-                    Server Keepalive Ping
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    When enabled, the admin panel silently pings your backend at the set interval to prevent cold starts.
-                  </p>
-                </div>
-                <Switch
-                  checked={draft.keepAlive?.enabled ?? false}
-                  onCheckedChange={v => updateNested("keepAlive", "enabled", v)}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                <Field label="Ping URL">
-                  <Input
-                    value={draft.keepAlive?.pingUrl || ""}
-                    onChange={e => updateNested("keepAlive", "pingUrl", e.target.value)}
-                    className="rounded-none font-mono text-sm"
-                    placeholder="https://your-api.onrender.com/api/healthz"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    The URL to ping (GET request). Use your backend&apos;s health check endpoint.
-                  </p>
-                </Field>
-
-                <Field label="Ping Interval (minutes)">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={60}
-                      value={draft.keepAlive?.intervalMinutes ?? 14}
-                      onChange={e => updateNested("keepAlive", "intervalMinutes", Math.max(1, Math.min(60, Number(e.target.value))))}
-                      className="rounded-none w-28"
-                    />
-                    <span className="text-sm text-muted-foreground">minutes</span>
+                <div className="flex items-center justify-between p-4 bg-muted/40 border border-border mb-6">
+                  <div>
+                    <p className="font-medium text-sm flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 text-accent" />
+                      Server Keepalive Ping
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      When enabled, the admin panel silently pings your backend at the set interval to prevent cold starts.
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Render free plan spins down after 15 min — keep this at 14 or less.
-                  </p>
-                </Field>
-              </div>
-
-              {draft.keepAlive?.enabled && draft.keepAlive?.pingUrl && (
-                <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 text-sm text-green-700 dark:text-green-400 flex items-start gap-2">
-                  <RefreshCw className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>
-                    Keepalive active — the admin panel will ping <code className="font-mono text-xs bg-green-500/10 px-1">{draft.keepAlive.pingUrl}</code> every{" "}
-                    <strong>{draft.keepAlive.intervalMinutes ?? 14} minutes</strong> while you are logged in.
-                  </span>
+                  <Switch
+                    checked={draft.keepAlive?.enabled ?? false}
+                    onCheckedChange={v => updateNested("keepAlive", "enabled", v)}
+                  />
                 </div>
-              )}
 
-              {draft.keepAlive?.enabled && !draft.keepAlive?.pingUrl && (
-                <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-700 dark:text-yellow-400">
-                  Keepalive is on but no Ping URL is set. Please enter your backend health check URL above.
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                  <Field label="Ping URL">
+                    <Input
+                      value={draft.keepAlive?.pingUrl || ""}
+                      onChange={e => updateNested("keepAlive", "pingUrl", e.target.value)}
+                      className="rounded-none font-mono text-sm"
+                      placeholder="https://your-api.onrender.com/api/healthz"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The URL to ping (GET request). Use your backend&apos;s health check endpoint.
+                    </p>
+                  </Field>
+
+                  <Field label="Ping Interval (minutes)">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={draft.keepAlive?.intervalMinutes ?? 14}
+                        onChange={e => updateNested("keepAlive", "intervalMinutes", Math.max(1, Math.min(60, Number(e.target.value))))}
+                        className="rounded-none w-28"
+                      />
+                      <span className="text-sm text-muted-foreground">minutes</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Render free plan spins down after 15 min — keep this at 14 or less.
+                    </p>
+                  </Field>
                 </div>
-              )}
-            </Section>
+
+                {draft.keepAlive?.enabled && draft.keepAlive?.pingUrl && (
+                  <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 text-sm text-green-700 dark:text-green-400 flex items-start gap-2">
+                    <RefreshCw className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                      Keepalive active — the admin panel will ping <code className="font-mono text-xs bg-green-500/10 px-1">{draft.keepAlive.pingUrl}</code> every{" "}
+                      <strong>{draft.keepAlive.intervalMinutes ?? 14} minutes</strong> while you are logged in.
+                    </span>
+                  </div>
+                )}
+
+                {draft.keepAlive?.enabled && !draft.keepAlive?.pingUrl && (
+                  <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-700 dark:text-yellow-400">
+                    Keepalive is on but no Ping URL is set. Please enter your backend health check URL above.
+                  </div>
+                )}
+              </Section>
+
+              <Section title="Low Stock Alerts" onSave={() => save("lowStockAlert")} saving={saving}>
+                <p className="text-sm text-muted-foreground -mt-2 mb-4">
+                  Get an email alert whenever a product's stock drops to or below the threshold after an order or manual update.
+                </p>
+
+                <div className="flex items-center justify-between p-4 bg-muted/40 border border-border mb-6">
+                  <div>
+                    <p className="font-medium text-sm flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-accent" />
+                      Low Stock Email Alerts
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      When enabled, the server sends an email to the address below when stock is low.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={draft.lowStockAlert?.enabled ?? false}
+                    onCheckedChange={v => updateNested("lowStockAlert", "enabled", v)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                  <Field label="Alert Email">
+                    <Input
+                      type="email"
+                      value={draft.lowStockAlert?.email || ""}
+                      onChange={e => updateNested("lowStockAlert", "email", e.target.value)}
+                      className="rounded-none"
+                      placeholder="admin@yourstore.com"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Alerts will be sent to this address. Uses your Mailgun configuration.
+                    </p>
+                  </Field>
+
+                  <Field label="Stock Threshold">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={draft.lowStockAlert?.threshold ?? 5}
+                        onChange={e => updateNested("lowStockAlert", "threshold", Math.max(1, Number(e.target.value)))}
+                        className="rounded-none w-28"
+                      />
+                      <span className="text-sm text-muted-foreground">units</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Send alert when stock reaches this number or below (e.g., 5 = alert at 5, 4, 3, 2, 1, 0).
+                    </p>
+                  </Field>
+                </div>
+
+                {draft.lowStockAlert?.enabled && draft.lowStockAlert?.email && (
+                  <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                    <Bell className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                      Alerts active — you will receive an email at <strong>{draft.lowStockAlert.email}</strong> when any product drops to{" "}
+                      <strong>{draft.lowStockAlert.threshold ?? 5} or fewer</strong> units.
+                    </span>
+                  </div>
+                )}
+
+                {draft.lowStockAlert?.enabled && !draft.lowStockAlert?.email && (
+                  <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-700 dark:text-yellow-400">
+                    Low stock alerts are on but no email address is set. Please enter an email above.
+                  </div>
+                )}
+              </Section>
+            </div>
           )}
 
         </div>
