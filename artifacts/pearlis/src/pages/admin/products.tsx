@@ -495,6 +495,65 @@ export default function AdminProducts() {
                         </Button>
                       </div>
                     </F>
+
+                    <F label="Craftsmanship Story Video">
+                      <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground bg-muted/40 border border-border px-3 py-2 rounded">
+                          Appears as <strong>"Watch the Story / Behind the Craft"</strong> on the product page. Paste a YouTube / embed URL, or upload a video file directly. The section stays <strong>hidden</strong> until a video is set.
+                        </p>
+                        <div className="flex gap-2 items-center">
+                          <Video className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <Input
+                            value={form.videoUrl}
+                            onChange={e => set("videoUrl", e.target.value)}
+                            className="rounded-none flex-1"
+                            placeholder="https://www.youtube.com/embed/... or upload below"
+                          />
+                          {form.videoUrl && (
+                            <Button variant="ghost" size="icon" className="rounded-none h-10 w-10 text-muted-foreground hover:text-destructive flex-shrink-0"
+                              onClick={() => set("videoUrl", "")}>
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <div
+                          className="border-2 border-dashed border-border p-6 text-center cursor-pointer hover:border-accent transition-colors"
+                          onClick={() => videoInputRef.current?.click()}
+                          onDragOver={e => e.preventDefault()}
+                          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFileUpload(f, "video"); }}>
+                          <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg" className="hidden"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, "video"); }} />
+                          {uploading ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                              <span className="text-sm text-muted-foreground">Uploading…</span>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                              <p className="text-sm text-muted-foreground">Drop video or <span className="text-accent underline underline-offset-2">click to upload</span></p>
+                              <p className="text-xs text-muted-foreground/60 mt-1">MP4, WebM, OGG — max 100 MB</p>
+                            </>
+                          )}
+                        </div>
+                        {form.videoUrl && (
+                          <div className="border border-border p-2 bg-muted/30">
+                            {form.videoUrl.startsWith("/api/uploads/") ? (
+                              <video src={form.videoUrl} controls className="w-full max-h-44 rounded" />
+                            ) : (
+                              <p className="text-xs text-muted-foreground px-1 py-0.5 truncate">
+                                <span className="text-green-600 font-medium">✓ Video URL set:</span> {form.videoUrl}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {!form.videoUrl && (
+                          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded">
+                            No video added — the "Watch the Story" section will be hidden on this product's page.
+                          </p>
+                        )}
+                      </div>
+                    </F>
                   </>
                 )}
 
@@ -566,54 +625,6 @@ export default function AdminProducts() {
                       </div>
                     </F>
 
-                    <F label="Craftsmanship Story Video">
-                      <div className="space-y-3">
-                        <p className="text-xs text-muted-foreground bg-muted/40 border border-border px-3 py-2 rounded">
-                          This video appears as <strong>"Watch the Story / Behind the Craft"</strong> on the product page. The section stays <strong>hidden</strong> until a video is uploaded or a URL is added.
-                        </p>
-                        <div className="flex gap-2 items-center">
-                          <Video className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} className="rounded-none flex-1"
-                            placeholder="https://www.youtube.com/embed/... or upload a video file below" />
-                          {form.videoUrl && <Button variant="ghost" size="icon" className="rounded-none h-10 w-10 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={() => set("videoUrl", "")}><X className="w-4 h-4" /></Button>}
-                        </div>
-                        <div className="border-2 border-dashed border-border p-6 text-center cursor-pointer hover:border-accent transition-colors"
-                          onClick={() => videoInputRef.current?.click()}
-                          onDragOver={e => e.preventDefault()}
-                          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFileUpload(f, "video"); }}>
-                          <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg" className="hidden"
-                            onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, "video"); }} />
-                          {uploading ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <Loader2 className="w-5 h-5 animate-spin text-accent" />
-                              <span className="text-sm text-muted-foreground">Uploading…</span>
-                            </div>
-                          ) : (
-                            <>
-                              <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                              <p className="text-sm text-muted-foreground">Drop video or <span className="text-accent underline underline-offset-2">click to upload</span></p>
-                              <p className="text-xs text-muted-foreground/60 mt-1">MP4, WebM, OGG — max 100MB</p>
-                            </>
-                          )}
-                        </div>
-                        {form.videoUrl && (
-                          <div className="border border-border p-2 bg-muted/30">
-                            {form.videoUrl.startsWith("/api/uploads/") ? (
-                              <video src={form.videoUrl} controls className="w-full max-h-40" />
-                            ) : (
-                              <p className="text-xs text-muted-foreground px-1 py-0.5 truncate">
-                                <span className="text-green-600 font-medium">✓ Video URL set:</span> {form.videoUrl}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {!form.videoUrl && (
-                          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded">
-                            No video added — the "Watch the Story" section will be hidden on this product's page.
-                          </p>
-                        )}
-                      </div>
-                    </F>
                   </>
                 )}
               </div>
