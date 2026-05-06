@@ -27,7 +27,7 @@ const CAT_EMOJIS: Record<string, string> = {
 async function uploadImage(file: File): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch(apiUrl("/api/upload?folder=page-content"), {
+  const res = await fetch(apiUrl("/api/upload?folder=page-content/sections"), {
     method: "POST",
     headers: adminHeaders(),
     body: fd,

@@ -173,7 +173,7 @@ export default function AdminProducts() {
     setter(true);
     try {
       const fd = new FormData(); fd.append("file", file);
-      const folder = kind === "video" ? "videos" : "products";
+      const folder = kind === "video" ? "products/videos" : "products/images";
       const res = await fetch(apiUrl(`/api/upload?folder=${folder}`), { method: "POST", headers: { Authorization: `Bearer ${adminToken()}` }, body: fd });
       if (!res.ok) throw new Error();
       const { url } = await res.json();

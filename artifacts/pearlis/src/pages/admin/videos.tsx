@@ -101,7 +101,7 @@ export default function AdminVideos() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(apiUrl("/api/upload?folder=videos"), {
+      const res = await fetch(apiUrl("/api/upload?folder=videos/lookbook"), {
         method: "POST",
         headers: { "x-admin-token": btoa("admin@pearlis.com:Pearl@Admin2024") },
         body: fd,
