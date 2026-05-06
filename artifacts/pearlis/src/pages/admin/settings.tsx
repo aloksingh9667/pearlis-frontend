@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw, Bell } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw, Bell, Truck, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGetSettings, useUpdateSetting, type SiteSettings, type PriceRange, type RingRow, type BraceletRow, type NecklaceRow } from "@/lib/adminApi";
 import { useListCategories } from "@workspace/api-client-react";
@@ -26,6 +26,8 @@ const TABS = [
   { id: "navbarCategories", label: "Navbar", icon: Navigation },
   { id: "sizeGuide", label: "Size Guide", icon: Ruler },
   { id: "emailNotifications", label: "Email Alerts", icon: Bell },
+  { id: "shipping", label: "Shipping", icon: Truck },
+  { id: "newUserOffer", label: "New User Offer", icon: Gift },
   { id: "server", label: "Server", icon: Server },
 ] as const;
 
@@ -1066,6 +1068,148 @@ export default function AdminSettings() {
                     Low stock alerts are on but no email address is set. Please enter an email above.
                   </div>
                 )}
+              </Section>
+            </div>
+          )}
+
+          {activeTab === "shipping" && (
+            <div>
+              <Section title="Shipping Rules" onSave={() => save("shipping")} saving={saving}>
+                <div className="space-y-5">
+                  <Field label="Free Shipping Cities" hint="Comma-separated city names (case-insensitive). Orders to these cities always get free shipping.">
+                    <Input
+                      value={draft.shipping?.freeCities ?? "noida,delhi,new delhi"}
+                      onChange={e => updateNested("shipping", "freeCities", e.target.value)}
+                      className="rounded-none"
+                      placeholder="noida, delhi, new delhi, gurgaon"
+                    />
+                  </Field>
+                  <Field label="Min. Order for Free Shipping (₹)" hint="Orders above this amount (in INR) get free shipping to any city.">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={draft.shipping?.minOrderFreeShipping ?? 500}
+                      onChange={e => updateNested("shipping", "minOrderFreeShipping", Number(e.target.value))}
+                      className="rounded-none w-40"
+                    />
+                  </Field>
+                  <Field label="Default Delivery Charge (₹)" hint="Charged when the order is below the free shipping threshold and city is not in the free list.">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={draft.shipping?.defaultCharge ?? 49}
+                      onChange={e => updateNested("shipping", "defaultCharge", Number(e.target.value))}
+                      className="rounded-none w-40"
+                    />
+                  </Field>
+                  <div className="p-4 bg-muted/40 border border-border text-xs text-muted-foreground space-y-1">
+                    <p className="font-semibold text-foreground">How it works:</p>
+                    <p>1. If delivery city matches a "Free Shipping City" → Free</p>
+                    <p>2. If order subtotal ≥ Min. Order threshold → Free</p>
+                    <p>3. Otherwise → Default Delivery Charge is added</p>
+                  </div>
+                </div>
+              </Section>
+            </div>
+          )}
+
+          {activeTab === "newUserOffer" && (
+            <div>
+              <Section title="New User Welcome Offer" onSave={() => save("newUserOffer")} saving={saving}>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">Enable Welcome Offer</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Automatically applies a discount for new users at checkout</p>
+                    </div>
+                    <Switch
+                      checked={draft.newUserOffer?.enabled ?? false}
+                      onCheckedChange={v => updateNested("newUserOffer", "enabled", v)}
+                    />
+                  </div>
+
+                  {draft.newUserOffer?.enabled && (
+                    <>
+                      <Field label="Discount Type">
+                        <div className="flex gap-2 flex-wrap">
+                          {[
+                            { value: "flat", label: "Flat Amount (₹)" },
+                            { value: "percent", label: "Percentage (%)" },
+                            { value: "free_shipping", label: "Free Shipping" },
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => updateNested("newUserOffer", "discountType", opt.value)}
+                              className={`px-4 py-2 text-xs uppercase tracking-widest border transition-colors ${
+                                (draft.newUserOffer?.discountType ?? "flat") === opt.value
+                                  ? "border-accent bg-accent/5 text-accent font-semibold"
+                                  : "border-border text-muted-foreground hover:border-accent"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </Field>
+
+                      {(draft.newUserOffer?.discountType ?? "flat") !== "free_shipping" && (
+                        <Field
+                          label={(draft.newUserOffer?.discountType ?? "flat") === "percent" ? "Discount Percentage" : "Discount Amount (₹)"}
+                          hint={(draft.newUserOffer?.discountType ?? "flat") === "percent" ? "e.g. 10 = 10% off on first order" : "e.g. 100 = ₹100 off on first order"}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={(draft.newUserOffer?.discountType ?? "flat") === "percent" ? 100 : undefined}
+                              value={draft.newUserOffer?.discountValue ?? 0}
+                              onChange={e => updateNested("newUserOffer", "discountValue", Number(e.target.value))}
+                              className="rounded-none w-32"
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {(draft.newUserOffer?.discountType ?? "flat") === "percent" ? "%" : "₹"}
+                            </span>
+                          </div>
+                        </Field>
+                      )}
+
+                      <Field label="Valid for (days)" hint="Number of days after account creation during which the offer is available">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={draft.newUserOffer?.validDays ?? 7}
+                            onChange={e => updateNested("newUserOffer", "validDays", Number(e.target.value))}
+                            className="rounded-none w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">days</span>
+                        </div>
+                      </Field>
+
+                      <Field label="Offer Message" hint="Shown to the user in the checkout banner">
+                        <Input
+                          value={draft.newUserOffer?.message ?? ""}
+                          onChange={e => updateNested("newUserOffer", "message", e.target.value)}
+                          className="rounded-none"
+                          placeholder="Welcome! Enjoy a special discount on your first order."
+                        />
+                      </Field>
+
+                      <div className="p-4 bg-accent/5 border border-accent/20 text-xs text-muted-foreground space-y-1">
+                        <p className="font-semibold text-foreground">Preview:</p>
+                        <p>New users who registered within the last <strong>{draft.newUserOffer?.validDays ?? 7} days</strong> will see a welcome banner at checkout.</p>
+                        {(draft.newUserOffer?.discountType ?? "flat") === "free_shipping" ? (
+                          <p>They will receive <strong>free delivery</strong> on their first order.</p>
+                        ) : (draft.newUserOffer?.discountType ?? "flat") === "percent" ? (
+                          <p>They will get <strong>{draft.newUserOffer?.discountValue ?? 0}% off</strong> their first order.</p>
+                        ) : (
+                          <p>They will get <strong>₹{draft.newUserOffer?.discountValue ?? 0} off</strong> their first order.</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </Section>
             </div>
           )}

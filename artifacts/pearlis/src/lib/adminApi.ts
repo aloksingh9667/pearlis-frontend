@@ -96,6 +96,18 @@ export type SiteSettings = {
     otpVerification: boolean;
     passwordReset: boolean;
   };
+  shipping: {
+    freeCities: string;
+    minOrderFreeShipping: number;
+    defaultCharge: number;
+  };
+  newUserOffer: {
+    enabled: boolean;
+    discountType: "flat" | "percent" | "free_shipping";
+    discountValue: number;
+    message: string;
+    validDays: number;
+  };
 };
 
 export function useGetSettings() {

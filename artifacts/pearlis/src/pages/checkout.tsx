@@ -1,13 +1,14 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useGetCart, useCreateOrder } from "@workspace/api-client-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Tag, CheckCircle2, Truck, Shield, CreditCard, Banknote, MapPin } from "lucide-react";
+import { Loader2, Tag, CheckCircle2, Truck, Shield, CreditCard, Banknote, MapPin, Gift, MessageSquare } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetSettings } from "@/lib/adminApi";
@@ -68,6 +69,46 @@ export default function Checkout() {
 
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddrId, setSelectedAddrId] = useState<number | null>(null);
+  const [specialInstructions, setSpecialInstructions] = useState("");
+
+  // Base subtotal (needed before useMemos)
+  const subtotalINR = cart ? INR(cart.subtotal) : 0;
+  const discountINR = couponApplied?.discount || 0;
+
+  // ── Shipping calculation (live, based on city) ──
+  const shippingConfig = settings?.shipping;
+  const shippingChargeINR = useMemo(() => {
+    const sub = cart ? INR(cart.subtotal) : 0;
+    if (!shippingConfig) return sub >= 5000 ? 0 : 99;
+    const freeCities = (shippingConfig.freeCities || "").split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
+    if (freeCities.includes(form.city.trim().toLowerCase())) return 0;
+    if (sub >= (shippingConfig.minOrderFreeShipping ?? 500)) return 0;
+    return shippingConfig.defaultCharge ?? 49;
+  }, [shippingConfig, form.city, cart]);
+
+  // ── New User Welcome Offer ──
+  const newUserOffer = settings?.newUserOffer;
+  const isNewUser = useMemo(() => {
+    if (!user || !newUserOffer?.enabled || !newUserOffer?.discountValue) return false;
+    const validMs = (newUserOffer.validDays || 7) * 24 * 60 * 60 * 1000;
+    return !!(user as any).createdAt && (Date.now() - new Date((user as any).createdAt).getTime()) < validMs;
+  }, [user, newUserOffer]);
+
+  const welcomeDiscountINR = useMemo(() => {
+    const sub = cart ? INR(cart.subtotal) : 0;
+    const shipCharge = (() => {
+      if (!shippingConfig) return sub >= 5000 ? 0 : 99;
+      const freeCities = (shippingConfig.freeCities || "").split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
+      if (freeCities.includes(form.city.trim().toLowerCase())) return 0;
+      if (sub >= (shippingConfig.minOrderFreeShipping ?? 500)) return 0;
+      return shippingConfig.defaultCharge ?? 49;
+    })();
+    if (!isNewUser || !newUserOffer) return 0;
+    if (newUserOffer.discountType === "percent") return Math.round(sub * newUserOffer.discountValue / 100);
+    if (newUserOffer.discountType === "flat") return newUserOffer.discountValue;
+    if (newUserOffer.discountType === "free_shipping") return shipCharge;
+    return 0;
+  }, [isNewUser, newUserOffer, cart, shippingConfig, form.city]);
 
   useEffect(() => {
     if (!user) return;
@@ -135,13 +176,20 @@ export default function Checkout() {
     setCouponCode("");
   };
 
-  const subtotalINR = cart ? INR(cart.subtotal) : 0;
-  const discountINR = couponApplied?.discount || 0;
-  const totalINR = Math.max(0, subtotalINR - discountINR);
+  const totalINR = Math.max(0, subtotalINR - discountINR - welcomeDiscountINR) + shippingChargeINR;
 
   const placeOrderDirectly = useCallback((extraData?: Record<string, any>) => {
     createOrder.mutate(
-      { data: { shippingAddress: form, paymentMethod, couponCode: couponApplied?.code, ...extraData } },
+      {
+        data: {
+          shippingAddress: form,
+          paymentMethod,
+          couponCode: couponApplied?.code,
+          specialInstructions: specialInstructions.trim() || undefined,
+          welcomeDiscountRequested: isNewUser || undefined,
+          ...extraData,
+        }
+      },
       {
         onSuccess: (order: any) => {
           toast({ title: "Order Placed!", description: "Your order has been confirmed." });
@@ -152,7 +200,7 @@ export default function Checkout() {
         },
       }
     );
-  }, [form, paymentMethod, couponApplied, createOrder, toast, setLocation]);
+  }, [form, paymentMethod, couponApplied, specialInstructions, isNewUser, createOrder, toast, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,6 +421,42 @@ export default function Checkout() {
                     <Label htmlFor="phone" className="uppercase tracking-widest text-xs text-muted-foreground">Phone Number *</Label>
                     <Input id="phone" type="tel" required value={form.phone} onChange={handleChange} className="rounded-none h-12 border-border" placeholder="+91 98765 43210" />
                   </div>
+
+                  {/* Live shipping indicator */}
+                  <AnimatePresence>
+                    {form.city && (
+                      <motion.div
+                        key="ship-info"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className={`flex items-center gap-2 text-xs px-4 py-2.5 rounded-sm ${shippingChargeINR === 0 ? "bg-green-50 text-green-700 border border-green-200" : "bg-muted text-muted-foreground border border-border"}`}
+                      >
+                        <Truck className="w-3.5 h-3.5 flex-shrink-0" />
+                        {shippingChargeINR === 0
+                          ? `Free delivery to ${form.city}`
+                          : `₹${shippingChargeINR} delivery charge for ${form.city}`}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Special instructions */}
+                  <div className="space-y-2">
+                    <Label htmlFor="specialInstructions" className="uppercase tracking-widest text-xs text-muted-foreground flex items-center gap-1.5">
+                      <MessageSquare className="w-3 h-3" /> Special Instructions (optional)
+                    </Label>
+                    <Textarea
+                      id="specialInstructions"
+                      value={specialInstructions}
+                      onChange={e => setSpecialInstructions(e.target.value)}
+                      placeholder="Any special requests, gift messages, or delivery instructions..."
+                      className="rounded-none border-border resize-none text-sm min-h-[80px]"
+                      maxLength={500}
+                    />
+                    {specialInstructions && (
+                      <p className="text-xs text-muted-foreground text-right">{specialInstructions.length}/500</p>
+                    )}
+                  </div>
                 </div>
               </section>
 
@@ -429,7 +513,12 @@ export default function Checkout() {
 
               {/* Trust badges */}
               <div className="flex flex-wrap gap-6 pt-4 border-t border-border text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><Truck className="w-4 h-4 text-accent" /> Free shipping above ₹5,000</div>
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-accent" />
+                  {shippingConfig
+                    ? `Free delivery to ${(shippingConfig.freeCities || "").split(",").slice(0,2).map(c=>c.trim()).join(", ")} · Free above ₹${shippingConfig.minOrderFreeShipping}`
+                    : "Free shipping above ₹5,000"}
+                </div>
                 <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-accent" /> Secure & encrypted checkout</div>
               </div>
             </form>
@@ -463,6 +552,28 @@ export default function Checkout() {
                     </div>
                   ))}
                 </div>
+
+                {/* New User Welcome Offer Banner */}
+                <AnimatePresence>
+                  {isNewUser && (
+                    <motion.div
+                      key="welcome-offer"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="mb-5 flex items-start gap-3 bg-[#D4AF37]/10 border border-[#D4AF37]/40 px-4 py-3"
+                    >
+                      <Gift className="w-4 h-4 text-[#D4AF37] mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-[#D4AF37] uppercase tracking-widest">Welcome Offer Applied</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                          {newUserOffer?.message || "Enjoy a special discount on your first order!"}
+                          {welcomeDiscountINR > 0 && <span className="font-semibold text-[#D4AF37]"> — ₹{welcomeDiscountINR} off</span>}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Coupon */}
                 <div className="mb-7">
@@ -524,10 +635,16 @@ export default function Checkout() {
                       <span>— {fmt(discountINR)}</span>
                     </motion.div>
                   )}
+                  {welcomeDiscountINR > 0 && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-between text-[#D4AF37] font-medium">
+                      <span className="flex items-center gap-1"><Gift className="w-3 h-3" /> Welcome Offer</span>
+                      <span>— {fmt(welcomeDiscountINR)}</span>
+                    </motion.div>
+                  )}
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>
-                    <span className={subtotalINR >= 5000 ? "text-green-600" : ""}>
-                      {subtotalINR >= 5000 ? "Free" : fmt(99)}
+                    <span className={shippingChargeINR === 0 ? "text-green-600 font-medium" : ""}>
+                      {shippingChargeINR === 0 ? "Free" : fmt(shippingChargeINR)}
                     </span>
                   </div>
                   <div className="border-t border-border pt-4 flex justify-between font-serif text-xl">
