@@ -248,25 +248,6 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
             )}
           </div>
 
-          {/* Desktop hover overlay — Add to Cart */}
-          {showCartButton && (
-            <div className="hidden md:block absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
-              <button
-                onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                className={`w-full py-2.5 text-center text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-60 ${
-                  cartFlash
-                    ? "bg-[#D4AF37] text-white"
-                    : isOutOfStock
-                      ? "bg-[#0F0F0F]/50 backdrop-blur-sm text-white/50 cursor-not-allowed"
-                      : "bg-[#0F0F0F]/95 backdrop-blur-sm text-white hover:bg-[#D4AF37]"
-                }`}
-              >
-                {cartFlash ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-                {cartFlash ? "Added" : isOutOfStock ? "Out of Stock" : "Add to Bag"}
-              </button>
-            </div>
-          )}
         </div>
       </Link>
 

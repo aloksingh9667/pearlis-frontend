@@ -982,67 +982,8 @@ export default function Home() {
         </section>
       )}
 
-      {/* ── 13. NEWSLETTER ── */}
-      <section className="py-16 md:py-20 bg-[#0F0F0F] relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 60% at 50% 100%, rgba(212,175,55,0.07) 0%, transparent 70%)" }} />
-        <div className="relative z-10 max-w-lg mx-auto px-4 text-center">
-          <motion.div {...fadeUp()}>
-            <div className="flex items-center justify-center gap-3 mb-5">
-              <div className="h-px w-8 bg-[#D4AF37]/50" />
-              <p className="text-[#D4AF37] text-[9px] tracking-[0.4em] uppercase font-bold">Exclusive Access</p>
-              <div className="h-px w-8 bg-[#D4AF37]/50" />
-            </div>
-            <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">Join The Inner Circle</h2>
-            <p className="text-white/40 text-sm leading-relaxed mb-8">
-              Subscribe for early access to new collections, styling tips, and exclusive member-only offers.
-            </p>
-            <NewsletterForm />
-          </motion.div>
-        </div>
-      </section>
-
       <Footer />
     </div>
   );
 }
 
-function NewsletterForm() {
-  const [email, setEmail] = useState("");
-  const [done, setDone] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setLoading(true);
-    try {
-      await fetch(apiUrl("/api/newsletter/subscribe"), {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setDone(true);
-    } catch { /* ignore */ } finally { setLoading(false); }
-  };
-
-  if (done) {
-    return (
-      <div className="border border-[#D4AF37]/30 text-[#D4AF37] px-8 py-4 text-sm font-medium">
-        ✓ Welcome to the Pearlis Inner Circle
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-      <input
-        type="email" required value={email} onChange={e => setEmail(e.target.value)}
-        placeholder="Your email address"
-        className="flex-1 bg-white/5 border border-white/15 text-white placeholder:text-white/30 px-5 py-3.5 text-sm outline-none focus:border-[#D4AF37]/60 transition-colors"
-      />
-      <button type="submit" disabled={loading}
-        className="bg-[#D4AF37] hover:bg-[#c9a430] text-[#0A0A0A] px-7 py-3.5 text-[10px] tracking-[0.28em] uppercase font-extrabold transition-colors whitespace-nowrap">
-        {loading ? "..." : "Subscribe"}
-      </button>
-    </form>
-  );
-}
