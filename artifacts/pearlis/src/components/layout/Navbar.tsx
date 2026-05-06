@@ -275,17 +275,16 @@ export function Navbar() {
         <div className="relative max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-[68px]">
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 group">
-            {logoUrl ? (
+          <Link href="/" className="flex-shrink-0 group flex items-center gap-3">
+            {logoUrl && (
               <img src={logoUrl} alt={siteName} className="h-10 w-auto object-contain" />
-            ) : (
-              <div className="flex flex-col leading-none select-none">
-                <span className={`font-serif text-[1.6rem] tracking-[0.38em] font-bold transition-colors duration-400 ${isTransparent ? "text-white" : "text-[#0F0F0F]"}`}>
-                  {siteName.toUpperCase()}
-                </span>
-                <span className="text-[7.5px] tracking-[0.45em] uppercase text-[#D4AF37] mt-[2px] font-medium">{siteTagline}</span>
-              </div>
             )}
+            <div className={`flex flex-col leading-none select-none ${logoUrl ? "hidden sm:flex" : "flex"}`}>
+              <span className={`font-serif text-[1.6rem] tracking-[0.38em] font-bold transition-colors duration-400 ${isTransparent ? "text-white" : "text-[#0F0F0F]"}`}>
+                {siteName.toUpperCase()}
+              </span>
+              <span className="text-[7.5px] tracking-[0.45em] uppercase text-[#D4AF37] mt-[2px] font-medium">{siteTagline}</span>
+            </div>
           </Link>
 
           {/* Desktop nav */}
