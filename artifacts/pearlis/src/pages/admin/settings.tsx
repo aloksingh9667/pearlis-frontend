@@ -1314,7 +1314,7 @@ function LogoUploadButton({ onUrl, label }: { onUrl: (url: string) => void; labe
       const token = localStorage.getItem("token");
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const res = await fetch(apiUrl("/api/upload?folder=branding"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       onUrl(data.url);
@@ -1345,7 +1345,7 @@ function VideoUploadButton({ onUrl, label }: { onUrl: (url: string) => void; lab
       const token = localStorage.getItem("token");
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const res = await fetch(apiUrl("/api/upload?folder=videos"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       onUrl(data.url);
@@ -1381,7 +1381,7 @@ function IgUploadButton({ accept, label, icon, onUrls }: {
       try {
         const fd = new FormData();
         fd.append("file", file);
-        const res = await fetch(apiUrl("/api/upload"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+        const res = await fetch(apiUrl("/api/upload?folder=page-content"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
         if (!res.ok) continue;
         const data = await res.json();
         results.push(data.url);

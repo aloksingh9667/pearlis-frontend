@@ -1,0 +1,27 @@
+2026-05-06T13:54:02.197165767Z ==> Downloading cache...
+2026-05-06T13:54:02.299332706Z ==> Cloning from https://github.com/aloksingh9667/pearlis-backend
+2026-05-06T13:54:04.225733661Z ==> Checking out commit e6d64d24f5c5d24b6f9f5d0a32c3c8c65eaf72ad in branch main
+2026-05-06T13:54:21.512593716Z ==> Downloaded 508MB in 2s. Extraction took 16s.
+2026-05-06T13:54:46.044675272Z info: using existing install for stable-x86_64-unknown-linux-gnu
+2026-05-06T13:54:46.053818762Z info: default toolchain set to stable-x86_64-unknown-linux-gnu
+2026-05-06T13:54:46.053847612Z 
+2026-05-06T13:54:46.067998996Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+2026-05-06T13:54:46.068014416Z 
+2026-05-06T13:54:46.108032662Z ==> Running build command 'npm install -g pnpm && pnpm install && pnpm --filter @workspace/api-server run build'...
+2026-05-06T13:54:46.226385961Z ==> Using Node.js version 24.14.1 (default)
+2026-05-06T13:54:46.259142751Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-05-06T13:54:48.234184519Z 
+2026-05-06T13:54:48.23421408Z changed 1 package in 2s
+2026-05-06T13:54:48.234433895Z 
+2026-05-06T13:54:48.234571138Z 1 package is looking for funding
+2026-05-06T13:54:48.23466517Z   run `npm fund` for details
+2026-05-06T13:54:48.902435846Z  ERR_PNPM_OUTDATED_LOCKFILE  Cannot install with "frozen-lockfile" because pnpm-lock.yaml is not up to date with <ROOT>/artifacts/api-server/package.json
+2026-05-06T13:54:48.902458296Z 
+2026-05-06T13:54:48.902465296Z Note that in CI environments this setting is true by default. If you still need to run install in such cases, use "pnpm install --no-frozen-lockfile"
+2026-05-06T13:54:48.902471556Z 
+2026-05-06T13:54:48.902477957Z   Failure reason:
+2026-05-06T13:54:48.902484417Z   specifiers in the lockfile don't match specifiers in package.json:
+2026-05-06T13:54:48.902490697Z * 1 dependencies were added: cloudinary@^2.6.1
+2026-05-06T13:54:48.902496127Z 
+2026-05-06T13:54:49.002585588Z ==> Build failed 😞
+2026-05-06T13:54:49.002604198Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
