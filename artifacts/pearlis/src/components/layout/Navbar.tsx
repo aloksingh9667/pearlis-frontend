@@ -151,7 +151,7 @@ export function Navbar() {
 
   const siteName = siteSettings?.branding?.siteName || siteSettings?.general?.siteName || "PEARLIS";
   const siteTagline = siteSettings?.branding?.tagline || siteSettings?.general?.tagline || "Fine Jewellery";
-  const logoUrl = siteSettings?.branding?.logoUrl || "";
+  const logoUrl = siteSettings?.branding?.logoUrl || "/pearlis-logo.png";
 
   const cartItemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
