@@ -1,4 +1,4 @@
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import {
   useGetProduct,
   useGetRelatedProducts,
@@ -21,7 +21,7 @@ import { apiUrl } from "@/lib/apiUrl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Heart, Share2, ShieldCheck, Truck, RefreshCcw,
-  Star, ChevronLeft, ChevronRight, Award, Minus, Plus, Tag, Play, Check,
+  Star, ChevronLeft, ChevronRight, Award, Minus, Plus, Tag, Play, Check, ShoppingBag,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { useRecentlyViewed, recordView } from "@/hooks/useRecentlyViewed";
@@ -178,22 +178,30 @@ export default function ProductPage() {
 
   const [cartFlash, setCartFlash] = useState(false);
 
+  const [, navigate] = useLocation();
+
   const handleAddToCart = () => {
-    // Optimistic: instant feedback
     setCartFlash(true);
     toast({ title: "Added to bag" });
     setTimeout(() => setCartFlash(false), 1800);
+    addToCart.mutate(
+      { data: { productId, quantity, size: undefined } },
+      {
+        onSuccess: (updatedCart) => { queryClient.setQueryData(getGetCartQueryKey(), updatedCart); },
+        onError: () => { setCartFlash(false); toast({ title: "Could not add to bag", variant: "destructive" }); },
+      }
+    );
+  };
 
+  const handleBuyNow = () => {
     addToCart.mutate(
       { data: { productId, quantity, size: undefined } },
       {
         onSuccess: (updatedCart) => {
           queryClient.setQueryData(getGetCartQueryKey(), updatedCart);
+          navigate("/checkout");
         },
-        onError: () => {
-          setCartFlash(false);
-          toast({ title: "Could not add to bag", variant: "destructive" });
-        },
+        onError: () => toast({ title: "Could not process", variant: "destructive" }),
       }
     );
   };
@@ -203,18 +211,32 @@ export default function ProductPage() {
     const prev = queryClient.getQueryData<any[]>(wishlistKey) ?? [];
     if (isWishlisted) {
       queryClient.setQueryData(wishlistKey, prev.filter((w: any) => w.id !== productId));
-      removeFromWishlist.mutate({ id: productId }, {
+      removeFromWishlist.mutate({ productId }, {
         onError: () => queryClient.setQueryData(wishlistKey, prev),
       });
     } else {
       queryClient.setQueryData(wishlistKey, [...prev, { id: productId, ...product }]);
       toast({ title: "Saved to wishlist" });
-      addToWishlist.mutate({ data: { productId } }, {
+      addToWishlist.mutate({ productId }, {
         onError: () => {
           queryClient.setQueryData(wishlistKey, prev);
           toast({ title: "Could not save", variant: "destructive" });
         },
       });
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = dp?.name || product.name;
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); return; } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied!", description: "Product link copied to clipboard." });
+    } catch {
+      toast({ title: "Share", description: url });
     }
   };
 
@@ -479,27 +501,48 @@ export default function ProductPage() {
             )}
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-2.5 mb-8 min-w-0">
-              <button
-                onClick={handleAddToCart}
-                disabled={product.stock === 0}
-                className={`w-full min-h-14 rounded-full text-white text-[10px] tracking-[0.25em] uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 px-6 py-4 sm:py-0 disabled:opacity-40 hover:shadow-[0_16px_32px_rgba(15,15,15,0.18)] active:scale-[0.98] ${
-                  cartFlash ? "bg-[#D4AF37]" : "bg-[#0F0F0F] hover:bg-[#1c1c1c]"
-                }`}
-              >
-                {cartFlash ? <><Check className="w-4 h-4" /> Added to Bag</> : product.stock === 0 ? "Out of Stock" : "Add to Bag"}
-              </button>
-              <div className="grid grid-cols-2 gap-2.5 sm:contents">
+            {product.stock > 0 && (
+              <div className="flex gap-2.5 mb-3 min-w-0">
                 <button
-                  onClick={handleWishlist}
-                  className={`w-full sm:w-14 min-h-14 rounded-full border flex items-center justify-center transition-all duration-300 ${isWishlisted ? "border-[#D4AF37] bg-[#D4AF37]/10 shadow-[0_8px_24px_rgba(212,175,55,0.18)]" : "border-[#0F0F0F]/12 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5"}`}
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className={`flex-1 min-h-14 rounded-full text-white text-[10px] tracking-[0.25em] uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 px-4 py-4 sm:py-0 disabled:opacity-40 hover:shadow-[0_16px_32px_rgba(15,15,15,0.18)] active:scale-[0.98] ${
+                    cartFlash ? "bg-[#D4AF37]" : "bg-[#0F0F0F] hover:bg-[#1c1c1c]"
+                  }`}
                 >
-                  <Heart className={`w-4.5 h-4.5 transition-all ${isWishlisted ? "text-[#D4AF37] fill-[#D4AF37] scale-110" : "text-[#0F0F0F]/40"}`} />
+                  {cartFlash ? <><Check className="w-4 h-4" /> Added</> : <><ShoppingBag className="w-4 h-4" /></>}
                 </button>
-                <button className="w-full sm:w-14 min-h-14 rounded-full border border-[#0F0F0F]/12 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 flex items-center justify-center transition-all duration-300">
-                  <Share2 className="w-4 h-4 text-[#0F0F0F]/40" />
+                <button
+                  onClick={handleBuyNow}
+                  disabled={product.stock === 0}
+                  className="flex-[2] min-h-14 rounded-full bg-[#D4AF37] hover:bg-[#c4a030] text-white text-[10px] tracking-[0.25em] uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 px-6 py-4 sm:py-0 disabled:opacity-40 hover:shadow-[0_16px_32px_rgba(212,175,55,0.3)] active:scale-[0.98]"
+                >
+                  Buy Now
                 </button>
               </div>
+            )}
+            {product.stock === 0 && (
+              <div className="mb-3">
+                <button disabled className="w-full min-h-14 rounded-full bg-[#0F0F0F]/20 text-[#0F0F0F]/40 text-[10px] tracking-[0.25em] uppercase font-bold flex items-center justify-center">
+                  Out of Stock
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2.5 mb-8 min-w-0">
+              <button
+                onClick={handleWishlist}
+                className={`flex-1 min-h-12 rounded-full border flex items-center justify-center gap-2 text-[10px] tracking-[0.15em] uppercase font-semibold transition-all duration-300 ${isWishlisted ? "border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_8px_24px_rgba(212,175,55,0.18)]" : "border-[#0F0F0F]/12 text-[#0F0F0F]/50 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-[#D4AF37]"}`}
+              >
+                <Heart className={`w-4 h-4 transition-all ${isWishlisted ? "fill-[#D4AF37]" : ""}`} />
+                {isWishlisted ? "Saved" : "Wishlist"}
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex-1 min-h-12 rounded-full border border-[#0F0F0F]/12 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-[#D4AF37] flex items-center justify-center gap-2 text-[10px] tracking-[0.15em] uppercase font-semibold text-[#0F0F0F]/50 transition-all duration-300"
+              >
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
             </div>
 
             {/* Trust badges */}

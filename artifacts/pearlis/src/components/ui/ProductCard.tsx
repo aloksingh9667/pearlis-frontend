@@ -154,12 +154,16 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
                 className={`w-full py-2.5 text-center text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-60 ${
                   cartFlash
                     ? "bg-[#D4AF37] text-white"
-                    : "bg-[#0F0F0F]/95 backdrop-blur-sm text-white hover:bg-[#D4AF37]"
+                    : product.stock === 0
+                      ? "bg-[#0F0F0F]/50 backdrop-blur-sm text-white/50 cursor-not-allowed"
+                      : "bg-[#0F0F0F]/95 backdrop-blur-sm text-white hover:bg-[#D4AF37]"
                 }`}
               >
                 {cartFlash
-                  ? <><Check className="w-3 h-3" /> Added</>
-                  : <><ShoppingBag className="w-3 h-3" /> {product.stock === 0 ? "Sold Out" : "Add to Bag"}</>
+                  ? <Check className="w-4 h-4" />
+                  : product.stock === 0
+                    ? <ShoppingBag className="w-4 h-4 opacity-50" />
+                    : <ShoppingBag className="w-4 h-4" />
                 }
               </button>
             ) : (
