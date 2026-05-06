@@ -1,16 +1,104 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { Product, useAddToCart, useAddToWishlist, useRemoveFromWishlist, useGetWishlist, getGetCartQueryKey, getGetWishlistQueryKey } from "@workspace/api-client-react";
-import { motion } from "framer-motion";
-import { Heart, Star, ShoppingBag, Check, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Heart, Star, ShoppingBag, Check, Zap, Bell, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiUrl } from "@/lib/apiUrl";
 
 interface ProductCardProps {
   product: Product;
   index?: number;
   showCartButton?: boolean;
+}
+
+/* ── Inline notify-me widget for out-of-stock cards ── */
+function CardNotifyMe({ productId }: { productId: number }) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(apiUrl("/api/stock-alerts"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Could not subscribe", description: data.error || "Try again.", variant: "destructive" });
+        return;
+      }
+      setDone(true);
+    } catch {
+      toast({ title: "Network error", description: "Check your connection.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [email, productId, toast]);
+
+  if (done) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+        className="w-full py-2.5 flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-[9px] font-bold tracking-[0.18em] uppercase"
+      >
+        <Check className="w-3 h-3" /> We'll notify you!
+      </motion.div>
+    );
+  }
+
+  return (
+    <div onClick={e => e.preventDefault()}>
+      <AnimatePresence mode="wait">
+        {!open ? (
+          <motion.button
+            key="bell-btn"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
+            className="w-full py-2.5 flex items-center justify-center gap-1.5 border border-[#D4AF37]/50 text-[#D4AF37] bg-[#D4AF37]/5 hover:bg-[#D4AF37]/12 text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200"
+          >
+            <Bell className="w-3 h-3" strokeWidth={2} />
+            Notify Me When Available
+          </motion.button>
+        ) : (
+          <motion.form
+            key="email-form"
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            onSubmit={handleSubmit}
+            className="flex gap-1"
+            onClick={e => e.stopPropagation()}
+          >
+            <input
+              type="email"
+              required
+              autoFocus
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="flex-1 min-w-0 border border-[#D4AF37]/30 focus:border-[#D4AF37] focus:outline-none px-2.5 py-2 text-[11px] text-[#0F0F0F] placeholder:text-[#0F0F0F]/30 bg-white"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-shrink-0 bg-[#D4AF37] hover:bg-[#c4a030] text-white text-[9px] font-bold tracking-[0.15em] uppercase px-3 py-2 transition-colors disabled:opacity-60 flex items-center gap-1"
+            >
+              {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bell className="w-3 h-3" />}
+            </button>
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 const INR = (n: number) => `₹${Math.round(n * 83).toLocaleString("en-IN")}`;
@@ -224,54 +312,54 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
         {/* Action buttons — always visible */}
         {showCartButton && (
           <div className="mt-2.5 space-y-1.5">
-            {/* Buy Now — gold CTA */}
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={handleBuyNow}
-              disabled={isOutOfStock || buyNowLoading}
-              className={`w-full py-2.5 flex items-center justify-center gap-1.5 text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 ${
-                isOutOfStock
-                  ? "bg-[#0F0F0F]/8 text-[#0F0F0F]/25 cursor-not-allowed"
-                  : "bg-[#D4AF37] text-white hover:bg-[#C9A227] shadow-[0_2px_12px_rgba(212,175,55,0.35)] hover:shadow-[0_4px_18px_rgba(212,175,55,0.5)]"
-              }`}
-            >
-              {buyNowLoading ? (
-                <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Zap className="w-3 h-3" strokeWidth={2.5} />
-              )}
-              {isOutOfStock ? "Out of Stock" : buyNowLoading ? "Processing…" : "Buy Now"}
-            </motion.button>
+            {isOutOfStock ? (
+              /* Out of stock: Notify Me widget */
+              <CardNotifyMe productId={product.id} />
+            ) : (
+              <>
+                {/* Buy Now — gold CTA */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleBuyNow}
+                  disabled={buyNowLoading}
+                  className="w-full py-2.5 flex items-center justify-center gap-1.5 text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 bg-[#D4AF37] text-white hover:bg-[#C9A227] shadow-[0_2px_12px_rgba(212,175,55,0.35)] hover:shadow-[0_4px_18px_rgba(212,175,55,0.5)] disabled:opacity-60"
+                >
+                  {buyNowLoading ? (
+                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Zap className="w-3 h-3" strokeWidth={2.5} />
+                  )}
+                  {buyNowLoading ? "Processing…" : "Buy Now"}
+                </motion.button>
 
-            {/* Add to Cart + Wishlist row */}
-            <div className="flex gap-1.5">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                className={`flex-1 py-2 border text-[9px] font-bold tracking-[0.18em] uppercase flex items-center justify-center gap-1.5 transition-all duration-200 ${
-                  cartFlash
-                    ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#D4AF37]"
-                    : isOutOfStock
-                      ? "border-[#0F0F0F]/8 text-[#0F0F0F]/20 cursor-not-allowed"
-                      : "border-[#0F0F0F]/15 text-[#0F0F0F]/55 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                }`}
-              >
-                {cartFlash ? <Check className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
-                {cartFlash ? "Added!" : "Add to Bag"}
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleWishlist}
-                className={`w-9 border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-                  isWishlisted
-                    ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#D4AF37]"
-                    : "border-[#0F0F0F]/15 text-[#0F0F0F]/40 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                }`}
-              >
-                <Heart className="w-3.5 h-3.5" fill={isWishlisted ? "currentColor" : "none"} strokeWidth={1.8} />
-              </motion.button>
-            </div>
+                {/* Add to Cart + Wishlist row */}
+                <div className="flex gap-1.5">
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleAddToCart}
+                    className={`flex-1 py-2 border text-[9px] font-bold tracking-[0.18em] uppercase flex items-center justify-center gap-1.5 transition-all duration-200 ${
+                      cartFlash
+                        ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#D4AF37]"
+                        : "border-[#0F0F0F]/15 text-[#0F0F0F]/55 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                    }`}
+                  >
+                    {cartFlash ? <Check className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
+                    {cartFlash ? "Added!" : "Add to Bag"}
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleWishlist}
+                    className={`w-9 border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                      isWishlisted
+                        ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#D4AF37]"
+                        : "border-[#0F0F0F]/15 text-[#0F0F0F]/40 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                    }`}
+                  >
+                    <Heart className="w-3.5 h-3.5" fill={isWishlisted ? "currentColor" : "none"} strokeWidth={1.8} />
+                  </motion.button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
