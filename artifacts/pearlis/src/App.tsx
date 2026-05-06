@@ -48,6 +48,7 @@ import AdminStockAlerts from "@/pages/admin/stock-alerts";
 import AdminNewsletter from "@/pages/admin/newsletter";
 import AdminReports from "@/pages/admin/reports";
 import AdminReturns from "@/pages/admin/returns";
+import AdminGallery from "@/pages/admin/gallery";
 import AdminLoginPage from "@/pages/admin-login";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/admin/newsletter">{() => <AdminRoute component={AdminNewsletter} />}</Route>
       <Route path="/admin/reports">{() => <AdminRoute component={AdminReports} />}</Route>
       <Route path="/admin/returns">{() => <AdminRoute component={AdminReturns} />}</Route>
+      <Route path="/admin/gallery">{() => <AdminRoute component={AdminGallery} />}</Route>
       <Route path="/admin-login" component={AdminLoginPage} />
 
       <Route component={NotFound} />
