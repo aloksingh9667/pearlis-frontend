@@ -17,6 +17,7 @@ interface AuthUser {
   name: string;
   avatar?: string | null;
   role: string;
+  createdAt?: string;
 }
 
 interface AuthContextType {

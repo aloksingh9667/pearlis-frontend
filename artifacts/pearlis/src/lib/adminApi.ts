@@ -98,8 +98,13 @@ export type SiteSettings = {
   };
   shipping: {
     freeCities: string;
+    freeStates: string;
     minOrderFreeShipping: number;
     defaultCharge: number;
+    freeCityDays: string;
+    freeStateDays: string;
+    paidDays: string;
+    paidMessage: string;
   };
   newUserOffer: {
     enabled: boolean;

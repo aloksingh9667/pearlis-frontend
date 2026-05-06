@@ -75,40 +75,77 @@ export default function Checkout() {
   const subtotalINR = cart ? INR(cart.subtotal) : 0;
   const discountINR = couponApplied?.discount || 0;
 
-  // ── Shipping calculation (live, based on city) ──
+  // ── Shipping calculation (live, based on city + state) ──
   const shippingConfig = settings?.shipping;
-  const shippingChargeINR = useMemo(() => {
-    const sub = cart ? INR(cart.subtotal) : 0;
+
+  function calcShipCharge(city: string, state: string, sub: number) {
     if (!shippingConfig) return sub >= 5000 ? 0 : 99;
     const freeCities = (shippingConfig.freeCities || "").split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
-    if (freeCities.includes(form.city.trim().toLowerCase())) return 0;
+    const freeStates = (shippingConfig.freeStates || "").split(",").map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+    if (freeCities.includes(city.trim().toLowerCase())) return 0;
+    if (freeStates.length > 0 && freeStates.includes(state.trim().toLowerCase())) return 0;
     if (sub >= (shippingConfig.minOrderFreeShipping ?? 500)) return 0;
     return shippingConfig.defaultCharge ?? 49;
-  }, [shippingConfig, form.city, cart]);
+  }
+
+  const shippingChargeINR = useMemo(() => {
+    const sub = cart ? INR(cart.subtotal) : 0;
+    return calcShipCharge(form.city, form.state, sub);
+  }, [shippingConfig, form.city, form.state, cart]);
+
+  // ── Delivery date estimator ──
+  const deliveryEstimate = useMemo(() => {
+    if (!form.city && !form.state) return null;
+    const sub = cart ? INR(cart.subtotal) : 0;
+    const freeCities = (shippingConfig?.freeCities || "noida,delhi,new delhi").split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
+    const freeStates = (shippingConfig?.freeStates || "").split(",").map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+
+    let rangeStr: string;
+    if (freeCities.includes(form.city.trim().toLowerCase())) {
+      rangeStr = shippingConfig?.freeCityDays || "1-2";
+    } else if (freeStates.length > 0 && freeStates.includes(form.state.trim().toLowerCase())) {
+      rangeStr = shippingConfig?.freeStateDays || "2-3";
+    } else if (sub >= (shippingConfig?.minOrderFreeShipping ?? 500)) {
+      rangeStr = shippingConfig?.freeStateDays || "3-5";
+    } else {
+      rangeStr = shippingConfig?.paidDays || "5-7";
+    }
+
+    const [minD, maxD] = rangeStr.split("-").map(Number);
+    const addBusinessDays = (date: Date, days: number) => {
+      let count = 0;
+      const d = new Date(date);
+      while (count < days) {
+        d.setDate(d.getDate() + 1);
+        if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+      }
+      return d;
+    };
+    const now = new Date();
+    const fmtD = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const minDate = addBusinessDays(now, minD || 1);
+    const maxDate = addBusinessDays(now, maxD || 2);
+    return minD === maxD ? fmtD(minDate) : `${fmtD(minDate)} – ${fmtD(maxDate)}`;
+  }, [shippingConfig, form.city, form.state, cart]);
 
   // ── New User Welcome Offer ──
   const newUserOffer = settings?.newUserOffer;
   const isNewUser = useMemo(() => {
-    if (!user || !newUserOffer?.enabled || !newUserOffer?.discountValue) return false;
+    if (!user || !newUserOffer?.enabled) return false;
     const validMs = (newUserOffer.validDays || 7) * 24 * 60 * 60 * 1000;
-    return !!(user as any).createdAt && (Date.now() - new Date((user as any).createdAt).getTime()) < validMs;
+    if (!user.createdAt) return true; // treat unknown registration date as new
+    return (Date.now() - new Date(user.createdAt).getTime()) < validMs;
   }, [user, newUserOffer]);
 
   const welcomeDiscountINR = useMemo(() => {
     const sub = cart ? INR(cart.subtotal) : 0;
-    const shipCharge = (() => {
-      if (!shippingConfig) return sub >= 5000 ? 0 : 99;
-      const freeCities = (shippingConfig.freeCities || "").split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
-      if (freeCities.includes(form.city.trim().toLowerCase())) return 0;
-      if (sub >= (shippingConfig.minOrderFreeShipping ?? 500)) return 0;
-      return shippingConfig.defaultCharge ?? 49;
-    })();
+    const shipCharge = calcShipCharge(form.city, form.state, sub);
     if (!isNewUser || !newUserOffer) return 0;
-    if (newUserOffer.discountType === "percent") return Math.round(sub * newUserOffer.discountValue / 100);
-    if (newUserOffer.discountType === "flat") return newUserOffer.discountValue;
+    if (newUserOffer.discountType === "percent") return Math.round(sub * (newUserOffer.discountValue || 0) / 100);
+    if (newUserOffer.discountType === "flat") return newUserOffer.discountValue || 0;
     if (newUserOffer.discountType === "free_shipping") return shipCharge;
     return 0;
-  }, [isNewUser, newUserOffer, cart, shippingConfig, form.city]);
+  }, [isNewUser, newUserOffer, cart, shippingConfig, form.city, form.state]);
 
   useEffect(() => {
     if (!user) return;
@@ -422,20 +459,29 @@ export default function Checkout() {
                     <Input id="phone" type="tel" required value={form.phone} onChange={handleChange} className="rounded-none h-12 border-border" placeholder="+91 98765 43210" />
                   </div>
 
-                  {/* Live shipping indicator */}
+                  {/* Live shipping + delivery date indicator */}
                   <AnimatePresence>
-                    {form.city && (
+                    {(form.city || form.state) && (
                       <motion.div
                         key="ship-info"
                         initial={{ opacity: 0, y: -6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className={`flex items-center gap-2 text-xs px-4 py-2.5 rounded-sm ${shippingChargeINR === 0 ? "bg-green-50 text-green-700 border border-green-200" : "bg-muted text-muted-foreground border border-border"}`}
+                        className={`flex items-start gap-3 text-xs px-4 py-3 rounded-sm ${shippingChargeINR === 0 ? "bg-green-50 text-green-700 border border-green-200" : "bg-muted text-muted-foreground border border-border"}`}
                       >
-                        <Truck className="w-3.5 h-3.5 flex-shrink-0" />
-                        {shippingChargeINR === 0
-                          ? `Free delivery to ${form.city}`
-                          : `₹${shippingChargeINR} delivery charge for ${form.city}`}
+                        <Truck className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-medium">
+                            {shippingChargeINR === 0
+                              ? `Free delivery to ${form.city || form.state}`
+                              : `₹${shippingChargeINR} delivery charge`}
+                          </p>
+                          {deliveryEstimate && (
+                            <p className="mt-0.5 opacity-80">
+                              Estimated arrival: <span className="font-semibold">{deliveryEstimate}</span>
+                            </p>
+                          )}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>

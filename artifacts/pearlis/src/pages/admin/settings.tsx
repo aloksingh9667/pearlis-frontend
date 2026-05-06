@@ -81,7 +81,7 @@ export default function AdminSettings() {
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Tab Sidebar */}
-        <nav className="md:w-48 flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 flex-shrink-0">
+        <nav className="md:w-48 flex md:flex-col gap-1 overflow-x-auto md:overflow-y-auto md:max-h-[calc(100vh-160px)] pb-2 md:pb-0 flex-shrink-0">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -1073,43 +1073,127 @@ export default function AdminSettings() {
           )}
 
           {activeTab === "shipping" && (
-            <div>
-              <Section title="Shipping Rules" onSave={() => save("shipping")} saving={saving}>
+            <div className="space-y-8">
+              <Section title="Free Delivery Zones" onSave={() => save("shipping")} saving={saving}>
                 <div className="space-y-5">
-                  <Field label="Free Shipping Cities" hint="Comma-separated city names (case-insensitive). Orders to these cities always get free shipping.">
+                  <Field
+                    label="Free Delivery Cities"
+                    hint="Comma-separated city names (case-insensitive). Orders to these cities always get free delivery regardless of order value."
+                  >
                     <Input
                       value={draft.shipping?.freeCities ?? "noida,delhi,new delhi"}
                       onChange={e => updateNested("shipping", "freeCities", e.target.value)}
                       className="rounded-none"
-                      placeholder="noida, delhi, new delhi, gurgaon"
+                      placeholder="noida, delhi, new delhi, gurgaon, faridabad"
                     />
                   </Field>
-                  <Field label="Min. Order for Free Shipping (₹)" hint="Orders above this amount (in INR) get free shipping to any city.">
+                  <Field
+                    label="Free Delivery States"
+                    hint="Comma-separated state names (case-insensitive). Orders to these states get free delivery. Leave blank to disable state-level free delivery."
+                  >
                     <Input
-                      type="number"
-                      min={0}
-                      value={draft.shipping?.minOrderFreeShipping ?? 500}
-                      onChange={e => updateNested("shipping", "minOrderFreeShipping", Number(e.target.value))}
-                      className="rounded-none w-40"
+                      value={draft.shipping?.freeStates ?? ""}
+                      onChange={e => updateNested("shipping", "freeStates", e.target.value)}
+                      className="rounded-none"
+                      placeholder="uttar pradesh, haryana, delhi ncr"
                     />
                   </Field>
-                  <Field label="Default Delivery Charge (₹)" hint="Charged when the order is below the free shipping threshold and city is not in the free list.">
-                    <Input
-                      type="number"
-                      min={0}
-                      value={draft.shipping?.defaultCharge ?? 49}
-                      onChange={e => updateNested("shipping", "defaultCharge", Number(e.target.value))}
-                      className="rounded-none w-40"
-                    />
+                  <Field
+                    label="Min. Order Value for Free Delivery (₹)"
+                    hint="Orders above this amount get free delivery to ANY city/state not already in the free zone."
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">₹</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={draft.shipping?.minOrderFreeShipping ?? 500}
+                        onChange={e => updateNested("shipping", "minOrderFreeShipping", Number(e.target.value))}
+                        className="rounded-none w-32"
+                      />
+                    </div>
                   </Field>
-                  <div className="p-4 bg-muted/40 border border-border text-xs text-muted-foreground space-y-1">
-                    <p className="font-semibold text-foreground">How it works:</p>
-                    <p>1. If delivery city matches a "Free Shipping City" → Free</p>
-                    <p>2. If order subtotal ≥ Min. Order threshold → Free</p>
-                    <p>3. Otherwise → Default Delivery Charge is added</p>
-                  </div>
+                  <Field
+                    label="Standard Delivery Charge (₹)"
+                    hint="Charged when the order is below the free delivery threshold and destination is not in the free zone."
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">₹</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={draft.shipping?.defaultCharge ?? 49}
+                        onChange={e => updateNested("shipping", "defaultCharge", Number(e.target.value))}
+                        className="rounded-none w-32"
+                      />
+                    </div>
+                  </Field>
                 </div>
               </Section>
+
+              <Section title="Delivery Time Estimates" onSave={() => save("shipping")} saving={saving}>
+                <p className="text-sm text-muted-foreground -mt-2 mb-4">
+                  These ranges are shown to customers at checkout so they know when to expect their order. Use "min-max" format, e.g. <code className="bg-muted px-1 rounded text-xs">1-2</code>.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Field
+                    label="Free City Delivery (days)"
+                    hint={`Cities: ${(draft.shipping?.freeCities || "noida, delhi").split(",").slice(0, 3).map(c => c.trim()).join(", ")}...`}
+                  >
+                    <Input
+                      value={draft.shipping?.freeCityDays ?? "1-2"}
+                      onChange={e => updateNested("shipping", "freeCityDays", e.target.value)}
+                      className="rounded-none"
+                      placeholder="1-2"
+                    />
+                  </Field>
+                  <Field
+                    label="Free State Delivery (days)"
+                    hint="For orders in free delivery states"
+                  >
+                    <Input
+                      value={draft.shipping?.freeStateDays ?? "2-3"}
+                      onChange={e => updateNested("shipping", "freeStateDays", e.target.value)}
+                      className="rounded-none"
+                      placeholder="2-3"
+                    />
+                  </Field>
+                  <Field
+                    label="Paid / Other Delivery (days)"
+                    hint="For all other destinations"
+                  >
+                    <Input
+                      value={draft.shipping?.paidDays ?? "5-7"}
+                      onChange={e => updateNested("shipping", "paidDays", e.target.value)}
+                      className="rounded-none"
+                      placeholder="5-7"
+                    />
+                  </Field>
+                </div>
+                <div className="mt-4">
+                  <Field
+                    label="Paid Delivery Info Message"
+                    hint="Shown to customers in non-free delivery areas. Use {days} to insert the delivery days range and {charge} for the delivery charge."
+                  >
+                    <Input
+                      value={draft.shipping?.paidMessage ?? ""}
+                      onChange={e => updateNested("shipping", "paidMessage", e.target.value)}
+                      className="rounded-none"
+                      placeholder="Standard delivery in {days} business days — ₹{charge}"
+                    />
+                  </Field>
+                </div>
+              </Section>
+
+              <div className="p-5 bg-muted/40 border border-border text-sm space-y-2">
+                <p className="font-semibold text-foreground flex items-center gap-2"><Truck className="w-4 h-4 text-accent" /> How delivery is calculated at checkout</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
+                  <li>If customer's city is in <strong>Free Delivery Cities</strong> → Free + {draft.shipping?.freeCityDays ?? "1-2"} day delivery</li>
+                  <li>If customer's state is in <strong>Free Delivery States</strong> → Free + {draft.shipping?.freeStateDays ?? "2-3"} day delivery</li>
+                  <li>If order subtotal ≥ ₹{draft.shipping?.minOrderFreeShipping ?? 500} → Free delivery</li>
+                  <li>Otherwise → ₹{draft.shipping?.defaultCharge ?? 49} charge + {draft.shipping?.paidDays ?? "5-7"} day delivery</li>
+                </ol>
+              </div>
             </div>
           )}
 
