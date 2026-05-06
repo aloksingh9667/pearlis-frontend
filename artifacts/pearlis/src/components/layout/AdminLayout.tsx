@@ -5,7 +5,7 @@ import { apiUrl } from "@/lib/apiUrl";
 import {
   LayoutDashboard, ShoppingBag, Package, Users, FileText, Tag, LogOut,
   Settings, FileEdit, MessageSquare, Menu, X, Video, Layers, Star, Bell,
-  Mail, BarChart2, ChevronLeft, ChevronRight, ExternalLink, RotateCcw,
+  Mail, BarChart2, ChevronLeft, ChevronRight, ExternalLink, RotateCcw, GalleryThumbnails,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -27,6 +27,7 @@ const NAV_GROUPS = [
     label: "Content",
     items: [
       { name: "Journal",      href: "/admin/blogs",         icon: FileText },
+      { name: "Gallery",      href: "/admin/gallery",       icon: GalleryThumbnails },
       { name: "Videos",       href: "/admin/videos",        icon: Video },
       { name: "Page Content", href: "/admin/page-content",  icon: FileEdit },
       { name: "Messages",     href: "/admin/messages",      icon: MessageSquare },
