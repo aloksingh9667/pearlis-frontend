@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Product, useAddToCart, useAddToWishlist, useRemoveFromWishlist, useGetWishlist, getGetCartQueryKey, getGetWishlistQueryKey } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
-import { Heart, Star, ShoppingBag, Check } from "lucide-react";
+import { Heart, Star, ShoppingBag, Check, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,18 +30,17 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
   const queryClient = useQueryClient();
 
   const [cartFlash, setCartFlash] = useState(false);
+  const [buyNowLoading, setBuyNowLoading] = useState(false);
 
   const isWishlisted = wishlist?.some((w: any) => w.id === product.id);
+  const isOutOfStock = product.stock === 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Optimistic: flash checkmark + toast instantly
     setCartFlash(true);
     toast({ title: "Added to bag", description: product.name });
     setTimeout(() => setCartFlash(false), 1800);
-
     addToCart.mutate(
       { data: { productId: product.id, quantity: 1 } },
       {
@@ -56,6 +55,26 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
     );
   };
 
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isOutOfStock) return;
+    setBuyNowLoading(true);
+    addToCart.mutate(
+      { data: { productId: product.id, quantity: 1 } },
+      {
+        onSuccess: (updatedCart) => {
+          queryClient.setQueryData(getGetCartQueryKey(), updatedCart);
+          setLocation("/checkout");
+        },
+        onError: () => {
+          setBuyNowLoading(false);
+          toast({ title: "Could not process", variant: "destructive" });
+        },
+      }
+    );
+  };
+
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -63,18 +82,14 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
       setLocation(`/sign-in?redirect=/product/${product.id}`);
       return;
     }
-
     const wishlistKey = getGetWishlistQueryKey();
     const prev = queryClient.getQueryData<any[]>(wishlistKey) ?? [];
-
     if (isWishlisted) {
-      // Optimistic remove
       queryClient.setQueryData(wishlistKey, prev.filter((w: any) => w.id !== product.id));
       removeFromWishlist.mutate({ productId: product.id }, {
         onError: () => queryClient.setQueryData(wishlistKey, prev),
       });
     } else {
-      // Optimistic add
       queryClient.setQueryData(wishlistKey, [...prev, { id: product.id, ...product }]);
       toast({ title: "Saved to wishlist", description: product.name });
       addToWishlist.mutate({ productId: product.id }, {
@@ -116,12 +131,12 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
             )}
           </div>
 
-          {/* Wishlist heart — optimistic toggle */}
+          {/* Wishlist heart — always visible */}
           <button
             className={`absolute top-2.5 right-2.5 z-10 w-7 h-7 backdrop-blur-sm flex items-center justify-center transition-all duration-200 shadow-md ${
               isWishlisted
-                ? "bg-[#D4AF37] text-white opacity-100 scale-110"
-                : "bg-white/90 text-[#0F0F0F] opacity-0 group-hover:opacity-100 hover:bg-[#D4AF37] hover:text-white"
+                ? "bg-[#D4AF37] text-white scale-110"
+                : "bg-white/90 text-[#0F0F0F] hover:bg-[#D4AF37] hover:text-white"
             }`}
             onClick={handleWishlist}
           >
@@ -145,38 +160,30 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
             )}
           </div>
 
-          {/* Hover overlay — Add to Cart (optimistic) */}
-          <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
-            {showCartButton ? (
+          {/* Desktop hover overlay — Add to Cart */}
+          {showCartButton && (
+            <div className="hidden md:block absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
               <button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={isOutOfStock}
                 className={`w-full py-2.5 text-center text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-60 ${
                   cartFlash
                     ? "bg-[#D4AF37] text-white"
-                    : product.stock === 0
+                    : isOutOfStock
                       ? "bg-[#0F0F0F]/50 backdrop-blur-sm text-white/50 cursor-not-allowed"
                       : "bg-[#0F0F0F]/95 backdrop-blur-sm text-white hover:bg-[#D4AF37]"
                 }`}
               >
-                {cartFlash
-                  ? <Check className="w-4 h-4" />
-                  : product.stock === 0
-                    ? <ShoppingBag className="w-4 h-4 opacity-50" />
-                    : <ShoppingBag className="w-4 h-4" />
-                }
+                {cartFlash ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+                {cartFlash ? "Added" : isOutOfStock ? "Out of Stock" : "Add to Bag"}
               </button>
-            ) : (
-              <div className="bg-[#0F0F0F]/95 backdrop-blur-sm text-white py-2.5 text-center text-[9px] font-bold tracking-[0.25em] uppercase hover:bg-[#D4AF37] transition-colors duration-200">
-                View Details
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </Link>
 
       {/* Product info */}
-      <div className="flex flex-col gap-1 px-0.5">
+      <div className="flex flex-col gap-1 px-0.5 flex-1">
         <p className="text-[8.5px] tracking-[0.22em] uppercase text-[#D4AF37] font-semibold">
           {product.material || "Fine Jewellery"}
         </p>
@@ -213,6 +220,60 @@ export function ProductCard({ product, index = 0, showCartButton = true }: Produ
             <span className="text-[#0F0F0F] font-semibold text-sm">{INR(product.price)}</span>
           )}
         </div>
+
+        {/* Action buttons — always visible */}
+        {showCartButton && (
+          <div className="mt-2.5 space-y-1.5">
+            {/* Buy Now — gold CTA */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={handleBuyNow}
+              disabled={isOutOfStock || buyNowLoading}
+              className={`w-full py-2.5 flex items-center justify-center gap-1.5 text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-200 ${
+                isOutOfStock
+                  ? "bg-[#0F0F0F]/8 text-[#0F0F0F]/25 cursor-not-allowed"
+                  : "bg-[#D4AF37] text-white hover:bg-[#C9A227] shadow-[0_2px_12px_rgba(212,175,55,0.35)] hover:shadow-[0_4px_18px_rgba(212,175,55,0.5)]"
+              }`}
+            >
+              {buyNowLoading ? (
+                <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Zap className="w-3 h-3" strokeWidth={2.5} />
+              )}
+              {isOutOfStock ? "Out of Stock" : buyNowLoading ? "Processing…" : "Buy Now"}
+            </motion.button>
+
+            {/* Add to Cart + Wishlist row */}
+            <div className="flex gap-1.5">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                className={`flex-1 py-2 border text-[9px] font-bold tracking-[0.18em] uppercase flex items-center justify-center gap-1.5 transition-all duration-200 ${
+                  cartFlash
+                    ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#D4AF37]"
+                    : isOutOfStock
+                      ? "border-[#0F0F0F]/8 text-[#0F0F0F]/20 cursor-not-allowed"
+                      : "border-[#0F0F0F]/15 text-[#0F0F0F]/55 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                }`}
+              >
+                {cartFlash ? <Check className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
+                {cartFlash ? "Added!" : "Add to Bag"}
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleWishlist}
+                className={`w-9 border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                  isWishlisted
+                    ? "border-[#D4AF37] bg-[#D4AF37]/8 text-[#D4AF37]"
+                    : "border-[#0F0F0F]/15 text-[#0F0F0F]/40 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                }`}
+              >
+                <Heart className="w-3.5 h-3.5" fill={isWishlisted ? "currentColor" : "none"} strokeWidth={1.8} />
+              </motion.button>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );

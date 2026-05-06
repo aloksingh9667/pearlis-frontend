@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, X, ChevronLeft, ChevronRight, Volume2, VolumeX, Instagram } from "lucide-react";
+import { Play, X, ChevronLeft, ChevronRight, Volume2, VolumeX, Instagram, ShoppingBag, Heart, Zap } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 
 type Video = {
@@ -117,12 +118,45 @@ function VideoCard({ video, onClick, index }: { video: Video; onClick: () => voi
           </motion.div>
         </div>
 
-        {/* Info */}
+        {/* Info + Shop CTA */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <h3 className="font-serif text-white text-base md:text-lg leading-tight line-clamp-2">{video.title}</h3>
           {video.description && (
             <p className="text-white/60 text-xs mt-1 line-clamp-1">{video.description}</p>
           )}
+
+          {/* Shop action buttons — always visible on mobile, visible on hover on desktop */}
+          <div
+            className="mt-3 flex gap-2 md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Buy Now */}
+            <Link
+              href={video.category ? `/shop?category=${encodeURIComponent(video.category.toLowerCase())}` : "/shop"}
+              className="flex-1"
+            >
+              <button className="w-full py-2 bg-[#D4AF37] text-[#0A0A0A] text-[8px] font-bold tracking-[0.2em] uppercase flex items-center justify-center gap-1.5 hover:bg-[#C9A227] transition-colors shadow-[0_2px_12px_rgba(0,0,0,0.4)]">
+                <Zap className="w-3 h-3" strokeWidth={2.5} />
+                Buy Now
+              </button>
+            </Link>
+            {/* Add to Cart (shop link) */}
+            <Link
+              href={video.category ? `/shop?category=${encodeURIComponent(video.category.toLowerCase())}` : "/shop"}
+            >
+              <button className="w-9 h-full bg-white/15 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-white/25 transition-colors">
+                <ShoppingBag className="w-3.5 h-3.5" />
+              </button>
+            </Link>
+            {/* Wishlist (shop link) */}
+            <Link
+              href={video.category ? `/shop?category=${encodeURIComponent(video.category.toLowerCase())}` : "/shop"}
+            >
+              <button className="w-9 h-full bg-white/15 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-[#D4AF37]/80 hover:border-[#D4AF37] transition-colors">
+                <Heart className="w-3.5 h-3.5" strokeWidth={1.8} />
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </motion.div>
