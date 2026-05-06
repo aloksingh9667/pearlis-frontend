@@ -1,95 +1,73 @@
 # Pearlis — Luxury Jewelry Store
 
-## Project Overview
-A React + Vite SPA for a luxury jewelry e-commerce platform called "Pearlis". It includes a full shopping experience (products, cart, checkout, orders, wishlist), user authentication, blog, gallery, videos, and an admin dashboard.
+A React + Vite SPA for a luxury jewelry e-commerce platform. Includes full shopping experience, user authentication, blog, gallery, videos, and an admin dashboard.
 
-## Architecture
+## Run & Operate
 
-### Monorepo Structure (pnpm workspaces)
-- `artifacts/pearlis/` — Main React frontend app (`@workspace/pearlis`)
-- `lib/api-client-react/` — Shared API client library (`@workspace/api-client-react`)
+```bash
+# Install dependencies
+pnpm install
 
-### Tech Stack
+# Start dev server (port 5000)
+PORT=5000 pnpm --filter @workspace/pearlis run dev
+
+# Build for production
+pnpm run build  # output goes to dist/
+```
+
+**Required env vars:**
+- `PORT=5000` — dev server port (set in workflow)
+- `VITE_GOOGLE_CLIENT_ID` — optional, enables Google OAuth login
+
+## Stack
+
 - **Framework**: React 19 + Vite 7
 - **Routing**: Wouter
 - **State/Data**: TanStack React Query
-- **Styling**: Tailwind CSS v4 + shadcn/ui components (Radix UI)
-- **Auth**: JWT tokens stored in localStorage + Google OAuth (`@react-oauth/google`)
-- **Backend**: External API at `https://pearlis-api.onrender.com` (proxied via Vite's `/api` route)
+- **Styling**: Tailwind CSS v4 + Radix UI (shadcn-style components)
+- **Auth**: JWT tokens in localStorage + Google OAuth (`@react-oauth/google`)
+- **Backend**: External API at `https://pearlis-api.onrender.com` (proxied via Vite `/api`)
 - **Language**: TypeScript
+- **Package manager**: pnpm workspaces
 
-### Key Configuration
-- Frontend runs on port 5000 (`PORT=5000` env var required by `vite.config.ts`)
-- Vite config has `allowedHosts: true` and `host: '0.0.0.0'` for Replit proxy compatibility
-- API requests to `/api/*` are proxied to the backend via Vite dev proxy in development
-- In **production** (Cloudflare Pages), the `VITE_API_URL` env var must be set to `https://pearlis-api.onrender.com` — all API calls route through `src/lib/apiUrl.ts` helper
-- The generated API client (`@workspace/api-client-react`) uses `setBaseUrl()` called in `main.tsx` with `VITE_API_URL`
-- All raw `fetch()` calls throughout pages use `apiUrl()` from `src/lib/apiUrl.ts` to prepend the correct origin
-- Google OAuth configurable via `VITE_GOOGLE_CLIENT_ID` env var
+## Where things live
 
-## Development
+- `artifacts/pearlis/` — Main React app (`@workspace/pearlis`)
+- `artifacts/pearlis/src/pages/` — All page components
+- `artifacts/pearlis/src/components/` — Shared UI components
+- `artifacts/pearlis/src/contexts/AuthContext.tsx` — Auth state
+- `artifacts/pearlis/src/lib/apiUrl.ts` — API URL helper used by all raw fetch calls
+- `lib/api-client-react/src/generated/api.ts` — Generated TanStack Query hooks (Orval)
+- `artifacts/pearlis/vite.config.ts` — Vite + proxy config
 
-### Running the App
-```bash
-PORT=5000 pnpm --filter @workspace/pearlis run dev
-```
+## Architecture decisions
 
-### Installing Dependencies
-```bash
-pnpm install
-```
+- API calls in dev are proxied by Vite (`/api` → `https://pearlis-api.onrender.com`); no CORS issues
+- `VITE_API_URL` is injected at build time for production; empty string in dev so proxy handles it
+- Auth is custom JWT (not Replit Auth / Supabase / Clerk) — token stored in localStorage
+- Monorepo with pnpm workspaces: frontend app + shared API client library
+- Google OAuth is optional; app degrades gracefully without `VITE_GOOGLE_CLIENT_ID`
 
-### Building for Production
-```bash
-pnpm run build
-# Output goes to dist/ (copied from artifacts/pearlis/dist/public)
-```
+## Product
 
-## Deployment
-- Type: Static site
-- Build command: `pnpm run build`
-- Public dir: `dist`
-
-## Features
-
-### User-Facing
 - Product catalogue, search, wishlist, cart, checkout (Razorpay + COD)
-- Order detail page with live status stepper, printable PDF invoice
-- **Return/Refund Request**: Banner on delivered orders opens a modal with reason selector, return policy, description, and API call to `POST /api/orders/:id/return-request`
+- Order tracking with status stepper, printable PDF invoice
+- Return/refund request flow for delivered orders
 - Blog / Journal, Gallery, Videos lookbook, Newsletter signup
-- Google OAuth + email/password authentication
+- Admin dashboard: products, orders, users, coupons, reviews, stock alerts, reports, returns
 
-### Admin Dashboard (`/admin/*`)
-- Dashboard, Reports (analytics with period switcher), Products, Categories, Orders
-- **Returns & Refunds** (`/admin/returns`): View all return requests, filter by status, expand each request to add an admin note and approve/reject/reset
-- Coupons, Reviews moderation, Stock Alerts, Newsletter subscribers
-- Journal (blog) management, Videos management, Page Content editor
+## User preferences
 
-### Backend Routes (Express + Drizzle + PostgreSQL)
-- `POST /api/orders/:id/return-request` — customer submits a return request
-- `GET /api/admin/return-requests?status=` — admin list with optional status filter
-- `PATCH /api/admin/return-requests/:id` — admin updates status + note
-- Return requests stored in `return_requests` table (auto-created via raw SQL if not exists)
+_Populate as you build_
 
-## Mobile Responsiveness
-All admin pages use `overflow-x-auto` on tables. Additional mobile fixes applied:
-- Orders: mobile accordion card view (< md), table view (≥ md)
-- Coupons: stats grid `grid-cols-1 sm:grid-cols-3`
-- Blogs: modal form grid `grid-cols-1 sm:grid-cols-2`
-- Reviews: removed extra padding wrapper that doubled the gutter
-- Reports: period switcher uses `flex-wrap` and `whitespace-nowrap` buttons
+## Gotchas
 
-## Workflow
-- **Start application**: `PORT=5000 pnpm --filter @workspace/pearlis run dev` on port 5000
+- `vite.config.ts` requires `PORT` env var in development (throws if missing and not production)
+- Replit plugins (`@replit/vite-plugin-*`) are conditionally loaded only in dev + Replit env
+- Backend API is hosted externally on Render (cold starts may cause slow initial API responses)
 
-## GitHub Sync
-Both frontend and backend repos are linked via `GITHUB_ACCESS_TOKEN` secret.
+## Pointers
 
-- **Frontend repo**: https://github.com/aloksingh9667/pearlis-frontend
-- **Backend repo**: https://github.com/aloksingh9667/pearlis-backend
-- **Backend code**: cloned into `/backend/` folder (excluded from frontend tracking via `.gitignore`)
-
-To push changes to both repos at once, run:
-```bash
-bash push-all.sh
-```
+- Workflow: `Start application` runs `PORT=5000 pnpm --filter @workspace/pearlis run dev`
+- Frontend GitHub: https://github.com/aloksingh9667/pearlis-frontend
+- Backend GitHub: https://github.com/aloksingh9667/pearlis-backend
