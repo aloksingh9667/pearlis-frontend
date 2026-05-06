@@ -485,31 +485,6 @@ export default function AdminProducts() {
                 {/* ── Description ── */}
                 {activeTab === "Description" && (
                   <>
-                    <F label="Short Description">
-                      <Textarea value={form.description} onChange={e => set("description", e.target.value)} className="rounded-none min-h-[90px]" placeholder="A hand-engraved lotus pendant in 22K gold with enamel detailing." />
-                    </F>
-                    <F label="Craft Story">
-                      <Textarea value={form.craftStory} onChange={e => set("craftStory", e.target.value)} className="rounded-none min-h-[100px]" />
-                    </F>
-                    <F label="Quality Highlights">
-                      <div className="space-y-2">
-                        {form.craftPoints.map((pt, i) => (
-                          <div key={i} className="flex gap-2 items-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-                            <Input value={pt} onChange={e => updateCraftPoint(i, e.target.value)} className="rounded-none text-sm" placeholder="Handcrafted by certified artisans" />
-                            <Button variant="ghost" size="icon" className="rounded-none h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
-                              onClick={() => set("craftPoints", form.craftPoints.filter((_, j) => j !== i))}>
-                              <MinusCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button variant="outline" size="sm" className="rounded-none text-xs uppercase tracking-widest gap-2 mt-1"
-                          onClick={() => set("craftPoints", [...form.craftPoints, ""])}>
-                          <PlusCircle className="w-3.5 h-3.5" /> Add Point
-                        </Button>
-                      </div>
-                    </F>
-
                     <F label="Craftsmanship Story Video">
                       <div className="space-y-3">
                         <p className="text-xs text-muted-foreground bg-muted/40 border border-border px-3 py-2 rounded">
@@ -566,6 +541,30 @@ export default function AdminProducts() {
                             No video added — the "Watch the Story" section will be hidden on this product's page.
                           </p>
                         )}
+                      </div>
+                    </F>
+                    <F label="Short Description">
+                      <Textarea value={form.description} onChange={e => set("description", e.target.value)} className="rounded-none min-h-[90px]" placeholder="A hand-engraved lotus pendant in 22K gold with enamel detailing." />
+                    </F>
+                    <F label="Craft Story">
+                      <Textarea value={form.craftStory} onChange={e => set("craftStory", e.target.value)} className="rounded-none min-h-[100px]" />
+                    </F>
+                    <F label="Quality Highlights">
+                      <div className="space-y-2">
+                        {form.craftPoints.map((pt, i) => (
+                          <div key={i} className="flex gap-2 items-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
+                            <Input value={pt} onChange={e => updateCraftPoint(i, e.target.value)} className="rounded-none text-sm" placeholder="Handcrafted by certified artisans" />
+                            <Button variant="ghost" size="icon" className="rounded-none h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+                              onClick={() => set("craftPoints", form.craftPoints.filter((_, j) => j !== i))}>
+                              <MinusCircle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button variant="outline" size="sm" className="rounded-none text-xs uppercase tracking-widest gap-2 mt-1"
+                          onClick={() => set("craftPoints", [...form.craftPoints, ""])}>
+                          <PlusCircle className="w-3.5 h-3.5" /> Add Point
+                        </Button>
                       </div>
                     </F>
                   </>
