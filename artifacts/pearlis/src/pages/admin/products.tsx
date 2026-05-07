@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { useListProducts, useDeleteProduct, useCreateProduct, useUpdateProduct, getListProductsQueryKey } from "@workspace/api-client-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -172,14 +173,11 @@ export default function AdminProducts() {
     const setter = kind === "video" ? setUploading : setImgUploading;
     setter(true);
     try {
-      const fd = new FormData(); fd.append("file", file);
       const folder = kind === "video" ? "products/videos" : "products/images";
-      const res = await fetch(apiUrl(`/api/upload?folder=${folder}`), { method: "POST", headers: { Authorization: `Bearer ${adminToken()}` }, body: fd });
-      if (!res.ok) throw new Error();
-      const { url } = await res.json();
+      const url = await uploadToCloudinary(file, folder, kind);
       if (kind === "video") { set("videoUrl", url); toast({ title: "Video uploaded!" }); }
       else { set("images", [...form.images.filter(Boolean), url]); toast({ title: "Image uploaded!" }); }
-    } catch { toast({ title: "Upload failed", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: e?.message || "Upload failed", variant: "destructive" }); }
     finally { setter(false); }
   };
 
