@@ -3,7 +3,7 @@ import { useListUsers } from "@workspace/api-client-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ShieldCheck, ShieldOff, Search } from "lucide-react";
+import { Loader2, ShieldCheck, ShieldOff, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,8 +17,30 @@ export default function AdminUsers() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [toggling, setToggling] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
   const users = data?.users ?? [];
+
+  async function deleteUser(userId: number, userName: string) {
+    if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
+    setDeleting(userId);
+    try {
+      const res = await fetch(apiUrl(`/api/admin/users/${userId}`), {
+        method: "DELETE",
+        headers: adminHeaders(),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to delete user");
+      }
+      await queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+      toast({ title: "User Deleted", description: `${userName} has been removed.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(null);
+    }
+  }
   const filtered = search.trim()
     ? users.filter(u =>
         u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -115,25 +137,39 @@ export default function AdminUsers() {
                     {format(new Date(user.createdAt), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleRole(user.id, user.role)}
-                      disabled={toggling === user.id}
-                      className={`gap-1.5 text-xs ${
-                        user.role === "admin"
-                          ? "text-destructive hover:text-destructive hover:bg-destructive/10"
-                          : "text-accent hover:text-accent hover:bg-accent/10"
-                      }`}
-                    >
-                      {toggling === user.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : user.role === "admin" ? (
-                        <><ShieldOff className="w-3.5 h-3.5" />Revoke Admin</>
-                      ) : (
-                        <><ShieldCheck className="w-3.5 h-3.5" />Make Admin</>
-                      )}
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleRole(user.id, user.role)}
+                        disabled={toggling === user.id}
+                        className={`gap-1.5 text-xs ${
+                          user.role === "admin"
+                            ? "text-destructive hover:text-destructive hover:bg-destructive/10"
+                            : "text-accent hover:text-accent hover:bg-accent/10"
+                        }`}
+                      >
+                        {toggling === user.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : user.role === "admin" ? (
+                          <><ShieldOff className="w-3.5 h-3.5" />Revoke Admin</>
+                        ) : (
+                          <><ShieldCheck className="w-3.5 h-3.5" />Make Admin</>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteUser(user.id, user.name)}
+                        disabled={deleting === user.id}
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        title="Delete user"
+                      >
+                        {deleting === user.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Trash2 className="w-3.5 h-3.5" />}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
