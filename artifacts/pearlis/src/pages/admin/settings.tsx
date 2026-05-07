@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw, Bell, Truck, Gift } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Settings, CreditCard, Phone, Share2, Instagram, Video, Zap, Megaphone, Palette, Upload, Tag, SlidersHorizontal, Navigation, Ruler, Server, RefreshCw, Bell, Truck, Gift, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGetSettings, useUpdateSetting, type SiteSettings, type PriceRange, type RingRow, type BraceletRow, type NecklaceRow } from "@/lib/adminApi";
 import { useListCategories } from "@workspace/api-client-react";
@@ -108,29 +108,21 @@ export default function AdminSettings() {
               <Field label="Tagline">
                 <Input value={draft.branding?.tagline || ""} onChange={e => updateNested("branding", "tagline", e.target.value)} className="rounded-none" placeholder="Fine Jewellery" />
               </Field>
-              <Field label="Logo Image URL">
-                <div className="space-y-2">
-                  <Input value={draft.branding?.logoUrl || ""} onChange={e => updateNested("branding", "logoUrl", e.target.value)} className="rounded-none" placeholder="https://... (leave blank for text logo)" />
-                  {draft.branding?.logoUrl && (
-                    <div className="border border-border p-3 bg-muted/30 flex items-center gap-3">
-                      <img src={draft.branding.logoUrl} alt="Logo preview" className="h-10 w-auto object-contain" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                      <span className="text-xs text-muted-foreground">Logo preview</span>
-                    </div>
-                  )}
-                  <LogoUploadButton onUrl={url => updateNested("branding", "logoUrl", url)} label="Upload Logo" />
-                </div>
+              <Field label="Logo">
+                <CircleLogoCropper
+                  value={draft.branding?.logoUrl || ""}
+                  onChange={url => updateNested("branding", "logoUrl", url)}
+                  folder="branding/logo"
+                  label="Logo"
+                />
               </Field>
-              <Field label="Favicon Image URL">
-                <div className="space-y-2">
-                  <Input value={draft.branding?.faviconUrl || ""} onChange={e => updateNested("branding", "faviconUrl", e.target.value)} className="rounded-none" placeholder="https://... (leave blank for default favicon)" />
-                  {draft.branding?.faviconUrl && (
-                    <div className="border border-border p-3 bg-muted/30 flex items-center gap-3">
-                      <img src={draft.branding.faviconUrl} alt="Favicon preview" className="h-8 w-8 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                      <span className="text-xs text-muted-foreground">Favicon preview (shown in browser tab)</span>
-                    </div>
-                  )}
-                  <LogoUploadButton onUrl={url => updateNested("branding", "faviconUrl", url)} label="Upload Favicon" />
-                </div>
+              <Field label="Favicon (browser tab icon)">
+                <CircleLogoCropper
+                  value={draft.branding?.faviconUrl || ""}
+                  onChange={url => updateNested("branding", "faviconUrl", url)}
+                  folder="branding/favicon"
+                  label="Favicon"
+                />
               </Field>
             </Section>
           )}
@@ -1301,6 +1293,198 @@ export default function AdminSettings() {
         </div>
       </div>
     </AdminLayout>
+  );
+}
+
+/* ─── Circle Logo Cropper ──────────────────────────────────────────────────── */
+function CircleLogoCropper({
+  value,
+  onChange,
+  folder = "branding/logo",
+  label = "Logo",
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  folder?: string;
+  label?: string;
+}) {
+  const DEFAULT_IMG = "/pearlis-logo-circle.png";
+  const displayUrl = value || DEFAULT_IMG;
+
+  const [editing, setEditing] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [scale, setScale] = useState(1);
+  const [minScale, setMinScale] = useState(0.1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ mx: 0, my: 0, ox: 0, oy: 0 });
+  const [uploading, setUploading] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgElRef = useRef<HTMLImageElement | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const CANVAS_SIZE = 280;
+
+  function handleFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      setImgSrc(e.target?.result as string);
+      setEditing(true);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  useEffect(() => {
+    if (!editing || !imgSrc) return;
+    const img = new Image();
+    img.onload = () => {
+      imgElRef.current = img;
+      const s = Math.max(CANVAS_SIZE / img.naturalWidth, CANVAS_SIZE / img.naturalHeight);
+      setMinScale(s * 0.4);
+      setScale(s);
+      setOffset({ x: 0, y: 0 });
+    };
+    img.src = imgSrc;
+  }, [editing, imgSrc]);
+
+  function drawCanvas() {
+    const canvas = canvasRef.current;
+    const img = imgElRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext("2d")!;
+    const S = CANVAS_SIZE;
+    ctx.clearRect(0, 0, S, S);
+    const iw = img.naturalWidth * scale, ih = img.naturalHeight * scale;
+    const ix = (S - iw) / 2 + offset.x, iy = (S - ih) / 2 + offset.y;
+    ctx.drawImage(img, ix, iy, iw, ih);
+    /* Overlay outside circle */
+    const ov = document.createElement("canvas");
+    ov.width = S; ov.height = S;
+    const oc = ov.getContext("2d")!;
+    oc.fillStyle = "rgba(0,0,0,0.52)";
+    oc.fillRect(0, 0, S, S);
+    oc.globalCompositeOperation = "destination-out";
+    oc.beginPath(); oc.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2); oc.fill();
+    ctx.drawImage(ov, 0, 0);
+    /* Gold border */
+    ctx.strokeStyle = "#D4AF37"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  useEffect(() => { if (editing && imgElRef.current) drawCanvas(); }, [scale, offset, editing]);
+
+  function onMouseDown(e: React.MouseEvent) {
+    setDragging(true);
+    setDragStart({ mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y });
+  }
+  function onMouseMove(e: React.MouseEvent) {
+    if (!dragging) return;
+    setOffset({ x: dragStart.ox + e.clientX - dragStart.mx, y: dragStart.oy + e.clientY - dragStart.my });
+  }
+  function onMouseUp() { setDragging(false); }
+  function onWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    setScale(s => Math.max(minScale, Math.min(s - e.deltaY * 0.001, 8)));
+  }
+
+  async function applyCrop() {
+    const img = imgElRef.current;
+    if (!img) return;
+    const out = document.createElement("canvas");
+    out.width = CANVAS_SIZE; out.height = CANVAS_SIZE;
+    const ctx = out.getContext("2d")!;
+    const S = CANVAS_SIZE;
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); ctx.clip();
+    const iw = img.naturalWidth * scale, ih = img.naturalHeight * scale;
+    ctx.drawImage(img, (S - iw) / 2 + offset.x, (S - ih) / 2 + offset.y, iw, ih);
+    setUploading(true);
+    out.toBlob(async blob => {
+      if (!blob) { setUploading(false); return; }
+      try {
+        const token = localStorage.getItem("token");
+        const fd = new FormData();
+        fd.append("file", blob, "logo-circle.png");
+        const res = await fetch(apiUrl(`/api/upload?folder=${folder}`), {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Upload failed");
+        }
+        const data = await res.json();
+        onChange(data.url);
+        toast({ title: `${label} saved!` });
+        setEditing(false); setImgSrc(null);
+      } catch (e: any) {
+        toast({ title: e?.message || "Upload failed. Check Cloudinary settings on Render.", variant: "destructive" });
+      } finally { setUploading(false); }
+    }, "image/png");
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Circle preview */}
+      <div className="flex items-center gap-4">
+        <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-2 border-[#D4AF37]/40 bg-muted flex-shrink-0 shadow-sm">
+          <img src={displayUrl} alt={label} className="w-full h-full object-cover"
+            onError={e => { (e.target as HTMLImageElement).src = "/pearlis-logo-circle.png"; }} />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-widest">
+            {value ? "Saved ✓" : "Using default"}
+          </p>
+          <Button variant="outline" size="sm"
+            className="rounded-none text-xs uppercase tracking-widest gap-1.5 h-8"
+            onClick={() => fileRef.current?.click()}>
+            <Upload className="w-3 h-3" /> Change {label}
+          </Button>
+          {value && (
+            <button onClick={() => onChange("")}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors uppercase tracking-widest">
+              <X className="w-3 h-3" /> Reset to default
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Crop editor */}
+      {editing && imgSrc && (
+        <div className="border border-[#D4AF37]/30 bg-muted/20 p-4 space-y-3 rounded-none">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center">
+            Drag to reposition · Scroll to zoom
+          </p>
+          <div className="flex justify-center">
+            <canvas ref={canvasRef} width={CANVAS_SIZE} height={CANVAS_SIZE}
+              className={`rounded-full shadow-md ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+              style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}
+              onMouseDown={onMouseDown} onMouseMove={onMouseMove}
+              onMouseUp={onMouseUp} onMouseLeave={onMouseUp} onWheel={onWheel} />
+          </div>
+          <div className="flex items-center gap-3 px-2">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest shrink-0">Zoom</span>
+            <input type="range" min={Math.round(minScale * 100)} max={800} step={1}
+              value={Math.round(scale * 100)}
+              onChange={e => setScale(Number(e.target.value) / 100)}
+              className="flex-1 accent-[#D4AF37] h-1" />
+          </div>
+          <div className="flex gap-2">
+            <Button className="rounded-none text-xs uppercase tracking-widest bg-[#D4AF37] hover:bg-[#c9a430] text-black flex-1 gap-2 h-9"
+              onClick={applyCrop} disabled={uploading}>
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+              {uploading ? "Uploading..." : "Crop & Save"}
+            </Button>
+            <Button variant="outline" className="rounded-none text-xs uppercase tracking-widest h-9"
+              onClick={() => { setEditing(false); setImgSrc(null); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" className="hidden"
+        onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }} />
+    </div>
   );
 }
 
