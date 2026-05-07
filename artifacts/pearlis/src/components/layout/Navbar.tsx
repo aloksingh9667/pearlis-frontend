@@ -34,7 +34,6 @@ const EXPLORE_ITEMS = [
   { label: "Gallery", href: "/gallery" },
   { label: "Videos", href: "/videos" },
   { label: "Journal", href: "/blog" },
-  { label: "Track Order", href: "/track-order" },
 ];
 
 const PLAIN_LINKS = [
