@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,16 +26,7 @@ const CAT_EMOJIS: Record<string, string> = {
 };
 
 async function uploadImage(file: File): Promise<string> {
-  const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch(apiUrl("/api/upload?folder=page-content/sections"), {
-    method: "POST",
-    headers: adminHeaders(),
-    body: fd,
-  });
-  if (!res.ok) throw new Error("Upload failed");
-  const { url } = await res.json();
-  return url;
+  return uploadToCloudinary(file, "page-content/sections", "image");
 }
 
 /* ── Image field: URL text input + upload button ── */
