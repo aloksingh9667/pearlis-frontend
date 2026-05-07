@@ -211,7 +211,7 @@ export default function AdminGallery() {
                   {/* Delete */}
                   <button
                     onClick={() => handleDelete(idx)}
-                    className="absolute bottom-2 right-2 bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-sm opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute bottom-2 right-2 bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-sm transition-all"
                     title="Remove photo"
                   >
                     <Trash2 className="w-3 h-3" />
