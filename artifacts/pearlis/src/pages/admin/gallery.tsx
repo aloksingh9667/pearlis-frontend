@@ -160,7 +160,7 @@ export default function AdminGallery() {
             className="border-2 border-dashed border-border rounded-none flex flex-col items-center justify-center py-24 gap-4 cursor-pointer hover:border-[#D4AF37]/50 transition-colors"
             onClick={() => fileRef.current?.click()}
           >
-            <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+            <GalleryThumbnails className="w-10 h-10 text-muted-foreground/40" />
             <div className="text-center">
               <p className="text-sm font-medium text-muted-foreground">No photos yet</p>
               <p className="text-xs text-muted-foreground/60 mt-1">Click to upload photos to your gallery</p>
