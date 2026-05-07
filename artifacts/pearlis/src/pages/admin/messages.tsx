@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Mail, MailOpen, Reply, Send, CheckSquare, Square, Users, RefreshCw } from "lucide-react";
+import { Loader2, Mail, MailOpen, Reply, Send, CheckSquare, Square, Users, RefreshCw, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,28 @@ export default function AdminMessages() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkReplyText, setBulkReplyText] = useState("");
   const [showBulkReply, setShowBulkReply] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  async function handleDelete(msgId: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm("Delete this message permanently?")) return;
+    setDeletingId(msgId);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/contact-messages/${msgId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) throw new Error("Failed");
+      if (selected?.id === msgId) { setSelected(null); setReplyText(""); }
+      toast({ title: "Message deleted" });
+      refetch();
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const messages = data?.messages || [];
   const unreadCount = data?.unread || 0;
@@ -145,6 +167,16 @@ export default function AdminMessages() {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {msg.replied && <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">Replied</span>}
                       {!msg.isRead && <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />}
+                      <button
+                        onClick={(e) => handleDelete(msg.id, e)}
+                        disabled={deletingId === msg.id}
+                        className="p-1 text-muted-foreground/40 hover:text-red-500 transition-colors disabled:opacity-50"
+                        title="Delete message"
+                      >
+                        {deletingId === msg.id
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : <Trash2 className="w-3 h-3" />}
+                      </button>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{msg.subject}</p>
