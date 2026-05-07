@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1401,20 +1402,8 @@ function CircleLogoCropper({
     out.toBlob(async blob => {
       if (!blob) { setUploading(false); return; }
       try {
-        const token = localStorage.getItem("token");
-        const fd = new FormData();
-        fd.append("file", blob, "logo-circle.png");
-        const res = await fetch(apiUrl(`/api/upload?folder=${folder}`), {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || "Upload failed");
-        }
-        const data = await res.json();
-        onChange(data.url);
+        const url = await uploadToCloudinary(blob, folder, "image", "logo-circle.png");
+        onChange(url);
         toast({ title: `${label} saved!` });
         setEditing(false); setImgSrc(null);
       } catch (e: any) {
@@ -1495,13 +1484,8 @@ function LogoUploadButton({ onUrl, label }: { onUrl: (url: string) => void; labe
   async function handleFile(file: File) {
     setUploading(true);
     try {
-      const token = localStorage.getItem("token");
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch(apiUrl("/api/upload?folder=branding/logo"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      onUrl(data.url);
+      const url = await uploadToCloudinary(file, "branding/logo", "image");
+      onUrl(url);
     } catch {
     } finally {
       setUploading(false);
@@ -1526,13 +1510,8 @@ function VideoUploadButton({ onUrl, label }: { onUrl: (url: string) => void; lab
   async function handleFile(file: File) {
     setUploading(true);
     try {
-      const token = localStorage.getItem("token");
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch(apiUrl("/api/upload?folder=videos/featured"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      onUrl(data.url);
+      const url = await uploadToCloudinary(file, "videos/featured", "video");
+      onUrl(url);
     } catch {
     } finally {
       setUploading(false);
@@ -1559,16 +1538,11 @@ function IgUploadButton({ accept, label, icon, onUrls }: {
 
   async function handleFiles(files: FileList) {
     setUploading(true);
-    const token = localStorage.getItem("token");
     const results: string[] = [];
     for (const file of Array.from(files)) {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch(apiUrl("/api/upload?folder=page-content/sections"), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-        if (!res.ok) continue;
-        const data = await res.json();
-        results.push(data.url);
+        const url = await uploadToCloudinary(file, "page-content/sections", "auto");
+        results.push(url);
       } catch {}
     }
     if (results.length) onUrls(results);
