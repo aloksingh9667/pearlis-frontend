@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,21 +32,12 @@ export default function AdminGallery() {
   /* ── Upload multiple images ── */
   async function handleFiles(files: FileList) {
     setUploading(true);
-    const token = localStorage.getItem("token");
     const uploaded: GalleryImage[] = [];
 
     for (const file of Array.from(files)) {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch(apiUrl("/api/upload?folder=gallery/photos"), {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        });
-        if (!res.ok) continue;
-        const data = await res.json();
-        uploaded.push({ url: data.url, alt: file.name.replace(/\.[^.]+$/, "") });
+        const url = await uploadToCloudinary(file, "gallery/photos", "image");
+        uploaded.push({ url, alt: file.name.replace(/\.[^.]+$/, "") });
       } catch {}
     }
 
