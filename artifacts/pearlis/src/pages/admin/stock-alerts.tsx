@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Loader2, Bell, Search, CheckCircle, Clock, Download, Send } from "lucide-react";
+import { Loader2, Bell, Search, CheckCircle, Clock, Download, Send, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -40,8 +40,41 @@ export default function AdminStockAlerts() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [notifying, setNotifying] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  async function handleDeleteAlert(id: number) {
+    if (!confirm("Remove this subscriber from the alert list?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(apiUrl(`/api/admin/stock-alerts/${id}`), { method: "DELETE", headers: adminHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      toast({ title: "Subscriber removed" });
+      queryClient.invalidateQueries({ queryKey: ["admin-stock-alerts"] });
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function handleDeleteProduct(productId: number, productName: string) {
+    if (!confirm(`Delete ALL ${productName} alert subscribers? This cannot be undone.`)) return;
+    setDeletingProduct(productId);
+    try {
+      const res = await fetch(apiUrl(`/api/admin/stock-alerts/product/${productId}`), { method: "DELETE", headers: adminHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      toast({ title: "All alerts deleted", description: `Removed all subscribers for ${productName}` });
+      queryClient.invalidateQueries({ queryKey: ["admin-stock-alerts"] });
+      setExpanded(null);
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setDeletingProduct(null);
+    }
+  }
 
   const { data, isLoading, error } = useQuery<Alert[]>({
     queryKey: ["admin-stock-alerts"],
@@ -270,6 +303,20 @@ export default function AdminStockAlerts() {
                       <Download className="w-3.5 h-3.5" />
                     </Button>
 
+                    {/* Delete all alerts for this product */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteProduct(g.productId, g.productName); }}
+                      disabled={deletingProduct === g.productId}
+                      className="gap-1.5 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 px-2 h-7"
+                      title="Delete all alerts for this product"
+                    >
+                      {deletingProduct === g.productId
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />}
+                    </Button>
+
                     {/* Expand chevron */}
                     <button
                       onClick={() => setExpanded(expanded === g.productId ? null : g.productId)}
@@ -294,6 +341,7 @@ export default function AdminStockAlerts() {
                           <th className="text-left px-5 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">Email</th>
                           <th className="text-left px-5 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">Subscribed</th>
                           <th className="text-left px-5 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">Status</th>
+                          <th className="px-5 py-2"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -316,6 +364,18 @@ export default function AdminStockAlerts() {
                                   <Clock className="w-3 h-3" /> Waiting
                                 </span>
                               )}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <button
+                                onClick={() => handleDeleteAlert(s.id)}
+                                disabled={deletingId === s.id}
+                                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors disabled:opacity-50"
+                                title="Remove subscriber"
+                              >
+                                {deletingId === s.id
+                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  : <Trash2 className="w-3.5 h-3.5" />}
+                              </button>
                             </td>
                           </tr>
                         ))}
