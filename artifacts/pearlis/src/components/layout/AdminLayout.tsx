@@ -6,6 +6,7 @@ import {
   LayoutDashboard, ShoppingBag, Package, Users, FileText, Tag, LogOut,
   Settings, FileEdit, MessageSquare, Menu, X, Video, Layers, Star, Bell,
   Mail, BarChart2, ChevronLeft, ChevronRight, ExternalLink, RotateCcw, GalleryThumbnails,
+  CloudUpload,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -47,6 +48,27 @@ const NAV_GROUPS = [
     ],
   },
 ];
+
+function useCloudinaryStatus() {
+  const [status, setStatus] = useState<"checking" | "ok" | "error">("checking");
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(apiUrl("/api/cloudinary/status"), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setStatus(res.ok ? "ok" : "error");
+      } catch {
+        setStatus("error");
+      }
+    };
+    check();
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return status;
+}
 
 function useKeepAlive() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -98,6 +120,7 @@ function useOrderBadge() {
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   useKeepAlive();
   const pendingOrders = useOrderBadge();
+  const cloudinaryStatus = useCloudinaryStatus();
   const [location] = useLocation();
   const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -248,6 +271,50 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </Link>
+
+        {/* Cloudinary CDN Status */}
+        <div
+          title={
+            cloudinaryStatus === "ok"
+              ? "Cloudinary: Connected — uploads working"
+              : cloudinaryStatus === "error"
+              ? "Cloudinary: Not connected — check CLOUDINARY_API_SECRET on Render"
+              : "Cloudinary: Checking connection..."
+          }
+          className={`group relative flex items-center gap-2.5 py-2 rounded-sm cursor-default
+            ${collapsed ? "justify-center px-0" : "px-4"}`}
+        >
+          <div className="relative flex-shrink-0">
+            <CloudUpload className={`w-4 h-4 ${
+              cloudinaryStatus === "ok" ? "text-emerald-400" :
+              cloudinaryStatus === "error" ? "text-rose-400" :
+              "text-sidebar-foreground/30"
+            }`} />
+            <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-sidebar ${
+              cloudinaryStatus === "ok" ? "bg-emerald-400" :
+              cloudinaryStatus === "error" ? "bg-rose-400 animate-pulse" :
+              "bg-sidebar-foreground/20"
+            }`} />
+          </div>
+          {!collapsed && (
+            <span className={`text-[11px] leading-none ${
+              cloudinaryStatus === "ok" ? "text-emerald-400/80" :
+              cloudinaryStatus === "error" ? "text-rose-400/80" :
+              "text-sidebar-foreground/30"
+            }`}>
+              {cloudinaryStatus === "ok" ? "CDN Connected" :
+               cloudinaryStatus === "error" ? "CDN Not Set Up" :
+               "CDN Checking..."}
+            </span>
+          )}
+          {collapsed && (
+            <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 text-xs font-medium bg-popover text-popover-foreground border border-border rounded-sm shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              {cloudinaryStatus === "ok" ? "CDN: Connected" :
+               cloudinaryStatus === "error" ? "CDN: Not Set Up" :
+               "CDN: Checking..."}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
