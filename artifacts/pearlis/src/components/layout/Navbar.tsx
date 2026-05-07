@@ -277,7 +277,9 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 group flex items-center gap-3">
             {logoUrl && (
-              <img src={logoUrl} alt={siteName} className="h-10 w-auto object-contain" />
+              <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0 border border-[#D4AF37]/20">
+                <img src={logoUrl} alt={siteName} className="w-full h-full object-cover" />
+              </div>
             )}
             <div className={`flex flex-col leading-none select-none ${logoUrl ? "hidden sm:flex" : "flex"}`}>
               <span className={`font-serif text-[1.6rem] tracking-[0.38em] font-bold transition-colors duration-400 ${isTransparent ? "text-white" : "text-[#0F0F0F]"}`}>
@@ -500,7 +502,9 @@ export function Navbar() {
               <div className="flex items-center justify-between px-6 py-5 border-b border-[#D4AF37]/20">
                 <div>
                   {logoUrl ? (
-                    <img src={logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
+                    <div className="h-9 w-9 rounded-full overflow-hidden border border-[#D4AF37]/20">
+                      <img src={logoUrl} alt={siteName} className="w-full h-full object-cover" />
+                    </div>
                   ) : (
                     <>
                       <p className="font-serif text-xl tracking-[0.3em] font-bold text-[#0F0F0F]">{siteName.toUpperCase()}</p>
