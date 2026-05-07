@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,19 +100,11 @@ export default function AdminVideos() {
   const handleUploadVideo = async (file: File) => {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch(apiUrl("/api/upload?folder=videos/lookbook"), {
-        method: "POST",
-        headers: { "x-admin-token": btoa("admin@pearlis.com:Pearl@Admin2024") },
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      const { url } = await res.json();
+      const url = await uploadToCloudinary(file, "videos/lookbook", "video");
       set("videoUrl", url);
       toast({ title: "Video uploaded!" });
-    } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: e?.message || "Upload failed", variant: "destructive" });
     } finally {
       setUploading(false);
     }
