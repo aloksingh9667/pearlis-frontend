@@ -3,6 +3,7 @@ import {
   useGetTrendingProducts,
   useGetNewArrivals,
   useListBlogs,
+  useListCategories,
 } from "@workspace/api-client-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -21,22 +22,37 @@ import { apiUrl } from "@/lib/apiUrl";
 /* ══════════════════════════════════════════════════════════
    CATEGORIES CAROUSEL
 ══════════════════════════════════════════════════════════ */
-const CATS = [
-  { label: "Ring", slug: "ring", src: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Earring", slug: "earring", src: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Pendants", slug: "pendants", src: "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Stickons", slug: "stickons", src: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Bracelet", slug: "bracelet", src: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Anklets", slug: "anklets", src: "https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Crunchies", slug: "crunchies", src: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Hair Accessories", slug: "hair-accessories", src: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Hair Band", slug: "hair-band", src: "https://images.unsplash.com/photo-1512361436605-a484bdb34b5f?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Waist Chain", slug: "waist-chain", src: "https://images.unsplash.com/photo-1619119069152-a2b331eb392a?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Keys Chain", slug: "keys-chain", src: "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&q=85&w=500&h=700" },
-  { label: "Crochet Flowers", slug: "crochet-flowers", src: "https://images.unsplash.com/photo-1592861956120-e524fc739696?auto=format&fit=crop&q=85&w=500&h=700" },
-];
+/* Fallback images keyed by slug for categories without a Cloudinary image */
+const FALLBACK_IMAGES: Record<string, string> = {
+  "ring": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=85&w=500&h=700",
+  "earring": "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=85&w=500&h=700",
+  "pendants": "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&q=85&w=500&h=700",
+  "stickons": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=85&w=500&h=700",
+  "bracelet": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=85&w=500&h=700",
+  "anklets": "https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?auto=format&fit=crop&q=85&w=500&h=700",
+  "crunchies": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&q=85&w=500&h=700",
+  "hair-accessories": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=85&w=500&h=700",
+  "hair-band": "https://images.unsplash.com/photo-1512361436605-a484bdb34b5f?auto=format&fit=crop&q=85&w=500&h=700",
+  "waist-chain": "https://images.unsplash.com/photo-1619119069152-a2b331eb392a?auto=format&fit=crop&q=85&w=500&h=700",
+  "keys-chain": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&q=85&w=500&h=700",
+  "crochet-flowers": "https://images.unsplash.com/photo-1592861956120-e524fc739696?auto=format&fit=crop&q=85&w=500&h=700",
+};
+const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=85&w=500&h=700";
 
 function CategoriesCarousel() {
+  const { data: dbCategories } = useListCategories({ query: { staleTime: 60_000 } });
+  const cats = Array.isArray(dbCategories) && dbCategories.length > 0
+    ? (dbCategories as Array<{ name: string; slug: string; imageUrl?: string | null }>).map(c => ({
+        label: c.name,
+        slug: c.slug,
+        src: c.imageUrl || FALLBACK_IMAGES[c.slug] || DEFAULT_FALLBACK,
+      }))
+    : Object.entries(FALLBACK_IMAGES).map(([slug, src]) => ({
+        label: slug.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+        slug,
+        src,
+      }));
+
   const trackRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
@@ -108,7 +124,7 @@ function CategoriesCarousel() {
             className="flex gap-2 md:gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {CATS.map(({ label, slug, src }, i) => (
+            {cats.map(({ label, slug, src }, i) => (
               <Link key={slug} href={`/category/${slug}`}
                 className="flex-shrink-0 snap-start w-[42vw] sm:w-[28vw] md:w-[22vw] lg:w-[calc(16.66%-10px)] xl:w-48 cursor-pointer group"
               >
@@ -143,7 +159,7 @@ function CategoriesCarousel() {
 
         {/* Dot indicators */}
         <div className="flex justify-center gap-1.5 mt-6">
-          {CATS.map((_, i) => (
+          {cats.map((_, i) => (
             <button
               key={i}
               onClick={() => scrollToIdx(i)}
